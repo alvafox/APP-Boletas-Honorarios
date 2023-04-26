@@ -17,11 +17,13 @@ Ingresar la URL del proyecto y luego presionar el botón CLONE.
 
 # 1 - Instalar librerías del proyecto.
 
-Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. 
+Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. Executar la siguiente línea en la consula del entorno virtual del proyecto.
 
-<div align="center">
-    <img src="imagenes/Librerias.png" alt="Texto alternativo de la imagen">
-</div>
+```
+
+pip install -r requirements.txt
+
+```
 
 
 # 2 - Encapsular el proyecto para producir el archivo autoejecutable (.EXE).
