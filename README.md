@@ -23,7 +23,7 @@ Luego en la capreta dist estará un archivo autoejecutable que puede buscar y re
 3 - Lectura de Boletas
 
 <div align="center">
-    <img src="imagenes/Lectura.png" alt="Texto alternativo de la imagen">
+    <img src="imagenes/Generar.png" alt="Texto alternativo de la imagen">
 </div>
 
 4 - Tabulación de datos
