@@ -1,0 +1,780 @@
+<html>
+<head>
+<title>main.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #cfd2d5;}
+.s2 { color: #808080;}
+.s3 { color: #8ea765;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#232425">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">PyQt5.QtWidgets </span><span class="s0">import </span><span class="s1">*</span>
+<span class="s0">from </span><span class="s1">PyQt5 </span><span class="s0">import </span><span class="s1">uic</span><span class="s0">, </span><span class="s1">QtWidgets</span><span class="s0">, </span><span class="s1">QtCore</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">import </span><span class="s1">os.path</span>
+<span class="s0">import </span><span class="s1">os</span>
+<span class="s0">import </span><span class="s1">win32com.client</span>
+<span class="s0">import </span><span class="s1">datetime</span>
+
+<span class="s0">import </span><span class="s1">pikepdf</span>
+<span class="s0">from </span><span class="s1">pikepdf </span><span class="s0">import </span><span class="s1">Pdf</span>
+<span class="s0">import </span><span class="s1">PyPDF2</span>
+<span class="s0">import </span><span class="s1">xlsxwriter</span>
+<span class="s0">from </span><span class="s1">pathlib </span><span class="s0">import </span><span class="s1">Path</span>
+<span class="s0">import </span><span class="s1">openpyxl</span>
+
+<span class="s0">import </span><span class="s1">shutil</span>
+<span class="s0">import </span><span class="s1">fitz</span>
+
+<span class="s0">import </span><span class="s1">math</span>
+<span class="s0">import </span><span class="s1">decimal</span>
+<span class="s0">from </span><span class="s1">PyPDF2 </span><span class="s0">import </span><span class="s1">PdfFileMerger</span><span class="s0">, </span><span class="s1">PdfFileReader</span>
+<span class="s0">from </span><span class="s1">decimal </span><span class="s0">import </span><span class="s1">Decimal </span><span class="s0">as </span><span class="s1">D</span>
+<span class="s1">context = decimal.getcontext()</span>
+<span class="s1">context.rounding = decimal.ROUND_HALF_UP</span>
+
+<span class="s2">#Para arreglar textos (experimental)</span>
+<span class="s0">import </span><span class="s1">ftfy</span>
+
+<span class="s0">import </span><span class="s1">qtmodern.styles</span>
+<span class="s0">import </span><span class="s1">qtmodern.windows</span>
+
+<span class="s2">###################################### Recursos #################################################</span>
+<span class="s2"># https://stackoverflow.com/questions/40813395/pyqt5-typeerror-wrong-base-class-of-toplevel-widget</span>
+<span class="s2"># https://www.youtube.com/watch?v=865Q41omqPk</span>
+<span class="s2"># https://www.codeforests.com/2021/05/16/python-reading-email-from-outlook-2/</span>
+<span class="s2"># Encapsular https://www.youtube.com/watch?v=3CKYvLW5U7I</span>
+<span class="s2"># https://medium.com/@akhileshjoshi123/merge-pdfs-with-python-d4d3bfbdbd3b</span>
+<span class="s2"># En algún momento evaluar utilizarel statement continune despues de los else: (https://www.youtube.com/watch?v=2JsGiygzi5M)</span>
+<span class="s2"># pyinstaller --onefile --name &quot;APP BOLETAS (NUEVO)&quot; --hiddenimport win32timezone -F main.py</span>
+
+<span class="s0">class </span><span class="s1">MyGUI(QMainWindow):</span>
+
+    <span class="s0">def </span><span class="s1">__init__(self):</span>
+        <span class="s1">super(MyGUI</span><span class="s0">, </span><span class="s1">self).__init__()</span>
+        <span class="s1">uic.loadUi(</span><span class="s3">r'Gui.ui'</span><span class="s0">, </span><span class="s1">self)</span>
+        <span class="s1">title = </span><span class="s3">&quot;Agencia Nacional de Investigación y Desarrollo&quot;</span>
+        <span class="s2"># set the title</span>
+        <span class="s1">self.setWindowTitle(title)</span>
+        <span class="s1">self.show()</span>
+        <span class="s2"># Aqui van los botones</span>
+        <span class="s1">self.pushButton.clicked.connect(self.buscar)</span>
+        <span class="s1">self.pushButton_2.clicked.connect(self.PDF)</span>
+        <span class="s1">self.pushButton_3.clicked.connect(self.copy_and_rename)</span>
+        <span class="s1">self.pushButton_4.clicked.connect(self.fusionar)</span>
+        <span class="s1">self.pushButton_5.clicked.connect(self.merge_excel)</span>
+        <span class="s1">self.dateEdit_2.setDate(datetime.datetime.now().date())</span>
+
+
+    <span class="s0">def </span><span class="s1">show_line_mail(self):</span>
+        <span class="s1">print(self.lineEdit.text())</span>
+        <span class="s1">mail = str(self.lineEdit.text())</span>
+        <span class="s0">return </span><span class="s1">mail</span>
+
+    <span class="s0">def </span><span class="s1">show_line_inbox(self):</span>
+        <span class="s1">print(self.lineEdit_2.text())</span>
+        <span class="s1">inbox = str(self.lineEdit_2.text())</span>
+        <span class="s0">return </span><span class="s1">inbox</span>
+
+    <span class="s0">def </span><span class="s1">show_line_sender(self):</span>
+        <span class="s1">print(self.lineEdit_3.text())</span>
+        <span class="s1">sender = str(self.lineEdit_3.text())</span>
+        <span class="s0">return </span><span class="s1">sender</span>
+
+    <span class="s0">def </span><span class="s1">show_line_subject(self):</span>
+        <span class="s1">print(self.lineEdit_4.text())</span>
+        <span class="s1">subject = str(self.lineEdit_4.text())</span>
+        <span class="s0">return </span><span class="s1">subject</span>
+
+    <span class="s0">def </span><span class="s1">date_start(self):</span>
+        <span class="s1">print(self.dateEdit.text())</span>
+        <span class="s1">self.dateEdit.setDisplayFormat(</span><span class="s3">&quot;yyyy-dd-MM&quot;</span><span class="s1">)</span>
+        <span class="s1">start_time = self.dateEdit.text()</span>
+        <span class="s1">print(start_time)</span>
+        <span class="s0">return </span><span class="s1">start_time</span>
+
+    <span class="s0">def </span><span class="s1">date_end(self):</span>
+        <span class="s1">print(self.dateEdit_2.text())</span>
+        <span class="s1">self.dateEdit_2.setDisplayFormat(</span><span class="s3">&quot;yyyy-dd-MM&quot;</span><span class="s1">)</span>
+        <span class="s1">end_time = self.dateEdit_2.text()</span>
+        <span class="s1">print(end_time)</span>
+        <span class="s0">return </span><span class="s1">end_time</span>
+
+    <span class="s0">def </span><span class="s1">buscar(self):</span>
+        <span class="s1">output_dir = Path.cwd() / </span><span class="s3">&quot;Boletas (PDF)&quot;</span>
+        <span class="s1">output_dir.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+
+        <span class="s2">########################################### Filtrar por Fecha #######################################################</span>
+        <span class="s3">'''IMPORTANTE el filtro [ReceivedTime] solicita AÑO-DIA-MES, caso contrario toma cualquier rango de fechas'''</span>
+
+        <span class="s1">mail = self.show_line_mail()</span>
+        <span class="s1">inbox = self.show_line_inbox()</span>
+        <span class="s1">sender = self.show_line_sender()</span>
+        <span class="s1">subject = self.show_line_subject()</span>
+
+        <span class="s1">start_time = self.date_start()  </span><span class="s2"># AÑO-DIA-MES</span>
+        <span class="s1">end_time = self.date_end()</span>
+
+        <span class="s0">if </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.GetDefaultFolder(</span><span class="s4">6</span><span class="s1">)</span>
+            <span class="s2">#inbox = outlook.Folders(self.show_line_mail).Folders(self.show_line_inbox)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(</span><span class="s3">'Bandeja de entrada'</span><span class="s1">)</span>
+            <span class="s2"># .Folders(self.show_line_inbox)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(outlook.Folders.Item(</span><span class="s4">1</span><span class="s1">))).Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span>
+                <span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.GetDefaultFolder(</span><span class="s4">6</span><span class="s1">)</span>
+            <span class="s2">#inbox = outlook.Folders(self.show_line_mail).Folders(self.show_line_inbox)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.GetDefaultFolder(</span><span class="s4">6</span><span class="s1">)</span>
+            <span class="s2">#inbox = outlook.Folders(self.show_line_mail).Folders(self.show_line_inbox)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot; And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(</span><span class="s3">'Bandeja de entrada'</span><span class="s1">)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(</span><span class="s3">'Bandeja de entrada'</span><span class="s1">)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;' And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.GetDefaultFolder(</span><span class="s4">6</span><span class="s1">)</span>
+            <span class="s2"># inbox = outlook.Folders(self.show_line_mail).Folders(self.show_line_inbox)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject == </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">&quot;[ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;' And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(mail)).Folders(</span><span class="s3">'Bandeja de entrada'</span><span class="s1">)</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;' And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+        <span class="s0">elif </span><span class="s1">mail == </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">inbox != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">sender != </span><span class="s3">&quot;&quot; </span><span class="s0">and </span><span class="s1">subject != </span><span class="s3">&quot;&quot;</span><span class="s1">:</span>
+            <span class="s1">outlook = win32com.client.Dispatch(</span><span class="s3">&quot;Outlook.Application&quot;</span><span class="s1">).GetNamespace(</span><span class="s3">&quot;MAPI&quot;</span><span class="s1">)</span>
+            <span class="s1">inbox = outlook.Folders(str(inbox))</span>
+            <span class="s1">messages = inbox.Items</span>
+            <span class="s1">messages = messages.Restrict(</span><span class="s3">f&quot;[Subject] = '</span><span class="s0">{</span><span class="s1">subject</span><span class="s0">}</span><span class="s3">'&quot; </span><span class="s1">+ </span><span class="s3">&quot;' And [ReceivedTime] &gt;= '&quot; </span><span class="s1">+ start_time + </span><span class="s3">&quot;' And [ReceivedTime] &lt;= '&quot; </span><span class="s1">+ end_time + </span><span class="s3">&quot;' And [SenderEmailAddress] = '&quot; </span><span class="s1">+ sender + </span><span class="s3">&quot;'&quot;</span><span class="s1">)</span>
+
+        <span class="s2">########################################################################################################################</span>
+        <span class="s2"># filtro = &quot;[SenderEmailAddress] = '0m3r@email.com'&quot;</span>
+
+        <span class="s2"># Items = inbox.Items.Restrict(filter)</span>
+        <span class="s2"># Item = Items.GetFirst()</span>
+        <span class="s2">########################################################################################################################</span>
+        <span class="s1">print(</span><span class="s3">&quot;messages&quot;</span><span class="s1">)</span>
+        <span class="s2">#(activar i para enumerar pdf descargados  # attachment_name = &quot;{:04n})</span>
+        <span class="s1">Nº = []</span>
+        <span class="s1">correos = []</span>
+        <span class="s1">fechas = []</span>
+        <span class="s1">adjunto = []</span>
+        <span class="s1">mensaje = []</span>
+        <span class="s1">i = </span><span class="s4">1</span>
+        <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">messages:</span>
+            <span class="s0">if </span><span class="s1">message.Class == </span><span class="s4">43</span><span class="s1">:</span>
+                <span class="s1">current_sender = str(message.Sender).lower()</span>
+                <span class="s1">mail = str(message.SenderEmailAddress).lower()</span>
+                <span class="s1">subject = message.Subject</span>
+                <span class="s1">body = message.body</span>
+                <span class="s1">attachments = message.Attachments</span>
+                <span class="s1">attachments_name = str(attachments).lower()</span>
+                <span class="s2">#Path(target_folder / &quot;EMAIL_BODY_{}.txt&quot;).write_text(str(body))</span>
+                <span class="s0">if </span><span class="s1">message.SenderEmailType == </span><span class="s3">&quot;EX&quot;</span><span class="s1">:</span>
+                    <span class="s1">print(message.Sender.GetExchangeUser().PrimarySmtpAddress)</span>
+                    <span class="s1">print(message.Class)</span>
+                    <span class="s1">print(message.SenderEmailType)</span>
+                    <span class="s1">print(message.ReceivedTime)</span>
+                    <span class="s1">mail = str(message.Sender.GetExchangeUser().PrimarySmtpAddress).lower()</span>
+                    <span class="s1">date = str(message.ReceivedTime)[</span><span class="s4">0</span><span class="s1">:</span><span class="s4">19</span><span class="s1">]</span>
+                    <span class="s1">date = datetime.datetime.strptime(date</span><span class="s0">, </span><span class="s3">'%Y-%m-%d %H:%M:%S'</span><span class="s1">)</span>
+                    <span class="s1">date = date.strftime(</span><span class="s3">'%d-%m-%Y %H:%M:%S'</span><span class="s1">)</span>
+                    <span class="s0">for </span><span class="s1">attachment </span><span class="s0">in </span><span class="s1">attachments:</span>
+                        <span class="s0">if </span><span class="s3">&quot;.pdf&quot; </span><span class="s0">in </span><span class="s1">str(attachment):</span>
+                        <span class="s2">#if &quot;.pdf&quot; in str(attachment) and &quot;bhe&quot; in str(attachment):</span>
+                            <span class="s1">target_folder = output_dir</span>
+                            <span class="s1">target_folder.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+                            <span class="s1">print(message.Class)</span>
+                            <span class="s1">print(target_folder)</span>
+                            <span class="s1">print(attachment)</span>
+                            <span class="s1">print(mail)</span>
+                            <span class="s1">attachment_name = str(attachment).lower()</span>
+                            <span class="s1">attachment_name = </span><span class="s3">&quot;{:04n} - {attachment_name}&quot;</span><span class="s1">.format(i</span><span class="s0">, </span><span class="s1">attachment_name=attachment_name)</span>
+                            <span class="s1">attachment.SaveAsFile(target_folder / attachment_name)</span>
+                            <span class="s1">Nº.append(i)</span>
+                            <span class="s1">correos.append(mail)</span>
+                            <span class="s1">fechas.append(date)</span>
+                            <span class="s1">adjunto.append(attachment_name)</span>
+                            <span class="s1">mensaje.append(str(body))</span>
+                            <span class="s1">i += </span><span class="s4">1</span>
+                <span class="s0">else</span><span class="s1">:</span>
+                    <span class="s1">print(message.SenderEmailAddress)</span>
+                    <span class="s1">print(message.Class)</span>
+                    <span class="s1">print(message.SenderEmailType)</span>
+                    <span class="s1">print(message.ReceivedTime)</span>
+                    <span class="s1">mail = str(message.SenderEmailAddress).lower()</span>
+                    <span class="s1">date = str(message.ReceivedTime)[</span><span class="s4">0</span><span class="s1">:</span><span class="s4">19</span><span class="s1">]</span>
+                    <span class="s1">date = datetime.datetime.strptime(date</span><span class="s0">, </span><span class="s3">'%Y-%m-%d %H:%M:%S'</span><span class="s1">)</span>
+                    <span class="s1">date = date.strftime(</span><span class="s3">'%d-%m-%Y %H:%M:%S'</span><span class="s1">)</span>
+                    <span class="s0">for </span><span class="s1">attachment </span><span class="s0">in </span><span class="s1">attachments:</span>
+                        <span class="s0">if </span><span class="s3">&quot;.pdf&quot; </span><span class="s0">in </span><span class="s1">str(attachment):</span>
+                        <span class="s2">#if &quot;.pdf&quot; in str(attachment) and &quot;bhe&quot; in str(attachment):</span>
+                            <span class="s1">target_folder = output_dir</span>
+                            <span class="s1">target_folder.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+                            <span class="s1">print(message.Class)</span>
+                            <span class="s1">print(target_folder)</span>
+                            <span class="s1">print(attachment)</span>
+                            <span class="s1">print(mail)</span>
+                            <span class="s1">attachment_name = str(attachment).lower()</span>
+                            <span class="s1">attachment_name = </span><span class="s3">&quot;{:04n} - {attachment_name}&quot;</span><span class="s1">.format(i</span><span class="s0">, </span><span class="s1">attachment_name=attachment_name)</span>
+                            <span class="s1">attachment.SaveAsFile(target_folder / attachment_name)</span>
+                            <span class="s1">Nº.append(i)</span>
+                            <span class="s1">correos.append(mail)</span>
+                            <span class="s1">fechas.append(date)</span>
+                            <span class="s1">adjunto.append(attachment_name)</span>
+                            <span class="s1">mensaje.append(str(body))</span>
+                            <span class="s1">i += </span><span class="s4">1</span>
+        <span class="s1">self.dateEdit.setDisplayFormat(</span><span class="s3">&quot;dd-MM-yyyy&quot;</span><span class="s1">)</span>
+        <span class="s1">self.dateEdit_2.setDisplayFormat(</span><span class="s3">&quot;dd-MM-yyyy&quot;</span><span class="s1">)</span>
+        <span class="s1">df = pd.DataFrame()</span>
+        <span class="s1">df[</span><span class="s3">&quot;Nº&quot;</span><span class="s1">] = Nº</span>
+        <span class="s1">df[</span><span class="s3">&quot;Correo&quot;</span><span class="s1">] = correos</span>
+        <span class="s1">df[</span><span class="s3">&quot;Fecha de envío&quot;</span><span class="s1">] = fechas</span>
+        <span class="s1">df[</span><span class="s3">&quot;PDF&quot;</span><span class="s1">] = adjunto</span>
+        <span class="s1">df[</span><span class="s3">&quot;Mensaje&quot;</span><span class="s1">] = mensaje</span>
+        <span class="s1">writer = pd.ExcelWriter(</span><span class="s3">'DETALLE ENVIOS.xlsx'</span><span class="s0">, </span><span class="s1">engine=</span><span class="s3">'xlsxwriter'</span><span class="s1">)</span>
+        <span class="s1">df.to_excel(writer</span><span class="s0">, </span><span class="s1">sheet_name=</span><span class="s3">'Boletas de Honorarios (Detalle)'</span><span class="s0">, </span><span class="s1">encoding=</span><span class="s3">'ascii'</span><span class="s0">, </span><span class="s1">index=</span><span class="s0">False</span><span class="s1">)</span>
+        <span class="s1">writer.save()</span>
+
+        <span class="s1">dlg = QMessageBox(self)</span>
+        <span class="s1">dlg.setWindowTitle(</span><span class="s3">&quot;Outlook&quot;</span><span class="s1">)</span>
+        <span class="s1">dlg.setText(</span><span class="s3">&quot;La busqueda de Boletas de Honorarios ha finalizado.&quot;</span><span class="s1">)</span>
+        <span class="s1">button = dlg.exec_()</span>
+        <span class="s0">if </span><span class="s1">button == QMessageBox.Ok:</span>
+            <span class="s1">print(</span><span class="s3">&quot;OK!&quot;</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">PDF(self):</span>
+        <span class="s1">direccion = Path.cwd() / </span><span class="s3">&quot;Boletas (PDF)&quot;</span>
+        <span class="s1">direccion.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+        <span class="s0">def </span><span class="s1">listarArchivos(direccion):</span>
+            <span class="s1">listaPDF = []</span>
+            <span class="s1">nombreArchivos = os.listdir(direccion)</span>
+            <span class="s0">for </span><span class="s1">archivo </span><span class="s0">in </span><span class="s1">nombreArchivos:</span>
+                <span class="s0">if </span><span class="s3">&quot;.pdf&quot; </span><span class="s0">in </span><span class="s1">archivo:</span>
+                    <span class="s1">listaPDF.append(archivo)</span>
+            <span class="s2">#listaPDF.sort(key=lambda x: os.path.getmtime(os.path.join(direccion, x)))</span>
+            <span class="s0">return </span><span class="s1">listaPDF</span>
+
+        <span class="s1">listaPDF = listarArchivos(direccion)</span>
+        <span class="s1">N = []</span>
+        <span class="s1">LISTA_BOLETA_PDF = []</span>
+        <span class="s1">LISTA_NOMBRE = []</span>
+        <span class="s1">LISTA_BOLETA = []</span>
+        <span class="s1">LISTA_NUMERO_BOLETA = []</span>
+        <span class="s1">LISTA_FECHA_INGRESADA = []</span>
+        <span class="s1">LISTA_NOMBRE_ANID = []</span>
+        <span class="s1">LISTA_RUT_ANID = []</span>
+        <span class="s1">LISTA_DIRECCION_ANID = []</span>
+        <span class="s1">LISTA_RUT_EMISOR = []</span>
+        <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO = []</span>
+        <span class="s1">LISTA_HONORARIOS = []</span>
+        <span class="s1">LISTA_IMPUESTO_RETENIDO = []</span>
+        <span class="s1">LISTA_TOTAL = []</span>
+        <span class="s1">LISTA_FECHA_EMISION = []</span>
+        <span class="s1">LISTA_DETALLE = []</span>
+        <span class="s1">j = </span><span class="s4">0</span>
+        <span class="s0">while </span><span class="s1">j &lt; len(listaPDF):</span>
+            <span class="s1">N.append(j + </span><span class="s4">1</span><span class="s1">)</span>
+            <span class="s1">print(str(</span><span class="s3">&quot;número &quot;</span><span class="s1">) + str(j + </span><span class="s4">1</span><span class="s1">) + str(</span><span class="s3">&quot; de &quot;</span><span class="s1">) + str(len(listaPDF)) + </span><span class="s3">&quot; &quot; </span><span class="s1">+ str(listaPDF[j]))</span>
+            <span class="s1">target_folder = direccion / listaPDF[j]</span>
+            <span class="s1">filename = target_folder</span>
+            <span class="s1">pdfFile = open(filename</span><span class="s0">, </span><span class="s3">'rb'</span><span class="s1">)  </span><span class="s2"># open function reads the file</span>
+            <span class="s1">pdfReader = PyPDF2.PdfFileReader(pdfFile</span><span class="s0">, </span><span class="s1">strict=</span><span class="s0">False</span><span class="s1">)</span>
+            <span class="s2"># The pdfReader variable is a readable object that will be</span>
+            <span class="s1">parsedpageCt = pdfReader.numPages</span>
+            <span class="s1">count = </span><span class="s4">0</span>
+            <span class="s1">text = </span><span class="s3">&quot;&quot;</span>
+            <span class="s2"># The while loop will read each page</span>
+            <span class="s0">while </span><span class="s1">count &lt; parsedpageCt:</span>
+                <span class="s1">print(parsedpageCt)</span>
+                <span class="s1">pageObj = pdfReader.getPage(count)</span>
+                <span class="s1">count = count + </span><span class="s4">1</span>
+                <span class="s1">text += pageObj.extractText()</span>
+            <span class="s1">text = ftfy.fix_text(text)</span>
+            <span class="s1">print(text)</span>
+            <span class="s2"># PDF NOMBRE</span>
+            <span class="s1">LISTA_BOLETA_PDF.append(listaPDF[j])</span>
+            <span class="s2">####################  NOMBRE  #########################</span>
+            <span class="s0">if </span><span class="s3">'BOLETA ' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s2">#    start = text.index('$')</span>
+                <span class="s1">end = text.index(</span><span class="s3">'BOLETA'</span><span class="s0">, </span><span class="s4">0 </span><span class="s1">+ </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">NOMBRE = text[</span><span class="s4">0</span><span class="s1">:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s4">0</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(NOMBRE)</span>
+                <span class="s1">LISTA_NOMBRE.append(NOMBRE)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">NOMBRE = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(NOMBRE)</span>
+                <span class="s1">LISTA_NOMBRE.append(NOMBRE)</span>
+            <span class="s2">####################  BOLETA  #########################</span>
+            <span class="s0">if </span><span class="s3">'BOLETA ' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'N °' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'BOLETA'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'N °'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">BOLETA = text[</span><span class="s4">0</span><span class="s1">:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s4">0</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(BOLETA)</span>
+                <span class="s1">LISTA_BOLETA.append(BOLETA)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">BOLETA = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(BOLETA)</span>
+                <span class="s1">LISTA_BOLETA.append(BOLETA)</span>
+            <span class="s2">################# NUMERO DE BOLETA ###################</span>
+            <span class="s0">if </span><span class="s3">'N ° ' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'RUT:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'N ° '</span><span class="s1">) + len(</span><span class="s3">'N ° '</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'RUT:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">NUMERO_BOLETA = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(NUMERO_BOLETA)</span>
+                <span class="s1">LISTA_NUMERO_BOLETA.append(NUMERO_BOLETA)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">NUMERO_BOLETA = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(NUMERO_BOLETA)</span>
+                <span class="s1">LISTA_NUMERO_BOLETA.append(NUMERO_BOLETA)</span>
+            <span class="s2">################## Fecha INGRESADA ###################</span>
+            <span class="s0">if </span><span class="s3">'Fecha:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Señor(es):' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Fecha:'</span><span class="s1">) + len(</span><span class="s3">'Fecha:'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Señor(es):'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">FECHA_EVALUADOR = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(FECHA_EVALUADOR)</span>
+                <span class="s1">LISTA_FECHA_INGRESADA.append(FECHA_EVALUADOR)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">FECHA_EVALUADOR = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(FECHA_EVALUADOR)</span>
+                <span class="s1">LISTA_FECHA_INGRESADA.append(FECHA_EVALUADOR)</span>
+            <span class="s2">################## Nombre ANID ###################</span>
+            <span class="s0">if </span><span class="s3">'Señor(es):' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Rut:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Señor(es):'</span><span class="s1">) + len(</span><span class="s3">&quot;Señor(es):&quot;</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Rut:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">NOMBRE_ANID = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(NOMBRE_ANID)</span>
+                <span class="s1">LISTA_NOMBRE_ANID.append(NOMBRE_ANID)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">NOMBRE_ANID = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(NOMBRE_ANID)</span>
+                <span class="s1">LISTA_NOMBRE_ANID.append(NOMBRE_ANID)</span>
+            <span class="s2">################## Rut ANID ###################</span>
+            <span class="s0">if </span><span class="s3">'Rut:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Domicilio:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Rut:'</span><span class="s1">) + len(</span><span class="s3">&quot;Rut:&quot;</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Domicilio:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">RUT_ANID = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(RUT_ANID)</span>
+                <span class="s1">LISTA_RUT_ANID.append(RUT_ANID)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">RUT_ANID = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(RUT_ANID)</span>
+                <span class="s1">LISTA_RUT_ANID.append(RUT_ANID)</span>
+            <span class="s2">################## DIRECCION ANID ###################</span>
+            <span class="s0">if </span><span class="s3">'Domicilio:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Por atención profesional:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Domicilio:'</span><span class="s1">) + len(</span><span class="s3">'Domicilio:'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Por atención profesional:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">DIRECCION_ANID = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(DIRECCION_ANID)</span>
+                <span class="s1">LISTA_DIRECCION_ANID.append(DIRECCION_ANID)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">DIRECCION_ANID = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(DIRECCION_ANID)</span>
+                <span class="s1">LISTA_DIRECCION_ANID.append(DIRECCION_ANID)</span>
+            <span class="s2">################## RUT EMISOR #######################</span>
+            <span class="s0">if </span><span class="s3">'RUT:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'GIRO(S)' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'RUT:'</span><span class="s1">) + len(</span><span class="s3">'RUT:'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'GIRO(S)'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">RUT_EMISOR = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(RUT_EMISOR)</span>
+                <span class="s1">LISTA_RUT_EMISOR.append(RUT_EMISOR)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">RUT_EMISOR = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(RUT_EMISOR)</span>
+                <span class="s1">LISTA_RUT_EMISOR.append(RUT_EMISOR)</span>
+            <span class="s2">################## HONORARIOS ###################</span>
+            <span class="s0">if </span><span class="s3">'Total Honorarios $:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s1">(</span><span class="s3">'10.75 % Impto.' </span><span class="s0">or </span><span class="s3">'11.50 % Impto.' </span><span class="s0">or </span><span class="s3">'11.5 % Impto.' </span><span class="s0">or</span>
+                                                  <span class="s3">'12.25 % Impto.' </span><span class="s0">or </span><span class="s3">'13 % Impto.' </span><span class="s0">or </span><span class="s3">'13.0 % Impto.' </span><span class="s0">or </span><span class="s3">'13.00 % Impto.' </span><span class="s0">or </span><span class="s3">'13.75 % Impto.' </span><span class="s0">or</span>
+                                                  <span class="s3">'14.5 % Impto.' </span><span class="s0">or </span><span class="s3">'14.50 % Impto.' </span><span class="s0">or </span><span class="s3">'15.25 % Impto.' </span><span class="s0">or </span><span class="s3">'16 % Impto.' </span><span class="s0">or </span><span class="s3">'16.0 % Impto.' </span><span class="s0">or</span>
+                                                  <span class="s3">'16.00 % Impto.' </span><span class="s0">or </span><span class="s3">'17 % Impto.' </span><span class="s0">or </span><span class="s3">'17.0 % Impto.' </span><span class="s0">or </span><span class="s3">'17.00 % Impto.' </span><span class="s0">in </span><span class="s1">text):</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Total Honorarios $:'</span><span class="s1">) + len(</span><span class="s3">&quot;Total Honorarios $:&quot;</span><span class="s1">)</span>
+                <span class="s0">if </span><span class="s3">'10.75 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'10.75 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'10.75 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'10.75 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'11.5 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'11.5 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'11.5 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'11.5 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'11.50 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'11.50 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'11.50 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'11.50 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'12.25 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'12.25 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'12.25 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'12.25 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'13 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'13 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'13 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'13 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'13.0 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'13.0 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'13.0 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'13.0 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'13.00 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'13.00 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'13.00 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'13.00 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'13.75 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'13.75 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'13.75 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'13.75 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'14.5 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'14.5 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'14.5 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'14.5 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'14.50 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'14.50 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'14.50 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'14.50 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'15.25 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'15.25 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'15.25 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'15.25 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'16 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'16 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'16 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'16 % Impto.'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'16.0 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'16.0 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'16.0 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'16.0 % Impto.'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'16.00 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'16.00 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'16.00 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'16.00 % Impto.'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'17 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'17 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'17 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'17 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'17.0 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'17.0 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'17.0 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'17.0 %'</span><span class="s1">)</span>
+                <span class="s0">elif </span><span class="s3">'17.00 % Impto.' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'17.00 % Impto.'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'17.00 %'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'17.00 %'</span><span class="s1">)</span>
+                <span class="s0">else</span><span class="s1">:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'Fecha / Hora'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                    <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'-'</span><span class="s1">)</span>
+                    <span class="s1">print(</span><span class="s3">'-'</span><span class="s1">)</span>
+                <span class="s0">if </span><span class="s1">end &gt; start: </span><span class="s2"># Significa que encontró el final y es mayor a 'Total Honorarios $:', si no encuentra la retenciòn ocupa el &quot;Fecha / Hora&quot; que es el siguiente texto que viene cuando no hay retención.</span>
+                    <span class="s1">HONORARIOS = text[start:end]</span>
+                    <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                    <span class="s1">print(HONORARIOS)</span>
+                    <span class="s1">LISTA_HONORARIOS.append(HONORARIOS)</span>
+                <span class="s0">else</span><span class="s1">: </span><span class="s2"># En este else no encontrò ni el '%' ni 'Fecha /hora'.</span>
+                    <span class="s1">HONORARIOS = </span><span class="s3">&quot;-&quot;</span>
+                    <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                    <span class="s1">print(HONORARIOS)</span>
+                    <span class="s1">LISTA_HONORARIOS.append(HONORARIOS)</span>
+            <span class="s0">else</span><span class="s1">: </span><span class="s2"># Si no encuentra ningun 'Total Honorarios $:' entonces incorpora un &quot;-&quot; a honorarios y a impuesto retenido.</span>
+                <span class="s1">LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append(</span><span class="s3">'-'</span><span class="s1">)</span>
+                <span class="s1">HONORARIOS = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(HONORARIOS)</span>
+                <span class="s1">LISTA_HONORARIOS.append(HONORARIOS)</span>
+            <span class="s2">################## IMPUESTO RETENIDO ###################</span>
+            <span class="s0">if </span><span class="s3">'Impto. Retenido:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Total:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Impto. Retenido:'</span><span class="s1">) + len(</span><span class="s3">'Impto. Retenido:'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Total:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">IMPUESTO_RETENIDO = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(IMPUESTO_RETENIDO)</span>
+                <span class="s1">LISTA_IMPUESTO_RETENIDO.append(IMPUESTO_RETENIDO)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">IMPUESTO_RETENIDO = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(IMPUESTO_RETENIDO)</span>
+                <span class="s1">LISTA_IMPUESTO_RETENIDO.append(IMPUESTO_RETENIDO)</span>
+            <span class="s2">################## TOTAL ###################</span>
+            <span class="s0">if </span><span class="s3">'Total:' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s1">(</span><span class="s3">'Esta boleta tiene una retención' </span><span class="s0">or </span><span class="s3">'Fecha / Hora' </span><span class="s0">in </span><span class="s1">text):</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Total:'</span><span class="s1">) + len(</span><span class="s3">'Total:'</span><span class="s1">)</span>
+                <span class="s0">if </span><span class="s3">'Esta boleta tiene una retención' </span><span class="s0">in </span><span class="s1">text:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'Esta boleta tiene una retención'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s0">else</span><span class="s1">:</span>
+                    <span class="s1">end = text.index(</span><span class="s3">'Fecha / Hora'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">)</span>
+                <span class="s1">TOTAL = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(TOTAL)</span>
+                <span class="s1">LISTA_TOTAL.append(TOTAL)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">TOTAL = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(TOTAL)</span>
+                <span class="s1">LISTA_TOTAL.append(TOTAL)</span>
+            <span class="s2">################## FECHA_EMISION ##################</span>
+            <span class="s0">if </span><span class="s3">'Fecha / Hora' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Fecha / Hora'</span><span class="s1">) + len(</span><span class="s3">'Fecha / Hora Emisión: '</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">':'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">) - </span><span class="s4">3</span>
+                <span class="s1">FECHA_EMISION = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(FECHA_EMISION)</span>
+                <span class="s1">LISTA_FECHA_EMISION.append(FECHA_EMISION)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">FECHA_EMISION = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(FECHA_EMISION)</span>
+                <span class="s1">LISTA_FECHA_EMISION.append(FECHA_EMISION)</span>
+            <span class="s2">################## DETALLE ##################</span>
+            <span class="s0">if </span><span class="s3">'Por atenci' </span><span class="s0">in </span><span class="s1">text </span><span class="s0">and </span><span class="s3">'Total Honorarios $:' </span><span class="s0">in </span><span class="s1">text:</span>
+                <span class="s1">start = text.index(</span><span class="s3">'Por atenci'</span><span class="s1">) + len(</span><span class="s3">'Por atención profesional:'</span><span class="s1">)</span>
+                <span class="s1">end = text.index(</span><span class="s3">'Total Honorarios $:'</span><span class="s0">, </span><span class="s1">start + </span><span class="s4">1</span><span class="s1">) - len(TOTAL)</span>
+                <span class="s1">DETALLE = text[start:end]</span>
+                <span class="s1">print(</span><span class="s3">f&quot;Start: </span><span class="s0">{</span><span class="s1">start</span><span class="s0">}</span><span class="s3">, End: </span><span class="s0">{</span><span class="s1">end</span><span class="s0">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+                <span class="s1">print(DETALLE)</span>
+                <span class="s1">LISTA_DETALLE.append(DETALLE)</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s1">DETALLE = </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">print(DETALLE)</span>
+                <span class="s1">LISTA_DETALLE.append(DETALLE)</span>
+            <span class="s1">j += </span><span class="s4">1</span>
+
+        <span class="s1">df = pd.DataFrame()</span>
+        <span class="s1">df[</span><span class="s3">&quot;N&quot;</span><span class="s1">] = N</span>
+        <span class="s1">df[</span><span class="s3">&quot;PDF&quot;</span><span class="s1">] = LISTA_BOLETA_PDF</span>
+        <span class="s2">#df[&quot;Boleta&quot;] = LISTA_BOLETA</span>
+        <span class="s1">df[</span><span class="s3">&quot;Boleta&quot;</span><span class="s1">] = LISTA_NOMBRE</span>
+        <span class="s1">df[</span><span class="s3">&quot;Rut Emisor&quot;</span><span class="s1">] = LISTA_RUT_EMISOR</span>
+        <span class="s1">df[</span><span class="s3">&quot;Nº Boleta&quot;</span><span class="s1">] = LISTA_NUMERO_BOLETA</span>
+        <span class="s1">df[</span><span class="s3">&quot;Nombre ANID&quot;</span><span class="s1">] = LISTA_NOMBRE_ANID</span>
+        <span class="s1">df[</span><span class="s3">&quot;RUT ANID&quot;</span><span class="s1">] = LISTA_RUT_ANID</span>
+        <span class="s1">df[</span><span class="s3">&quot;Direccion ANID&quot;</span><span class="s1">] = LISTA_DIRECCION_ANID</span>
+        <span class="s1">df[</span><span class="s3">&quot;Total Honorarios&quot;</span><span class="s1">] = LISTA_HONORARIOS</span>
+        <span class="s1">df[</span><span class="s3">&quot;Impuestos&quot;</span><span class="s1">] = LISTA_IMPUESTO_RETENIDO</span>
+        <span class="s1">df[</span><span class="s3">&quot;Total&quot;</span><span class="s1">] = LISTA_TOTAL</span>
+        <span class="s1">df[</span><span class="s3">&quot;% Impuesto Retenido&quot;</span><span class="s1">] = LISTA_PORCENTAJE_IMPUESTO_RETENIDO</span>
+        <span class="s1">df[</span><span class="s3">&quot;Fecha de Boleta&quot;</span><span class="s1">] = LISTA_FECHA_INGRESADA</span>
+        <span class="s1">df[</span><span class="s3">&quot;Fecha de Emisión&quot;</span><span class="s1">] = LISTA_FECHA_EMISION</span>
+        <span class="s1">df[</span><span class="s3">&quot;Detalle&quot;</span><span class="s1">] = LISTA_DETALLE</span>
+
+        <span class="s1">df = df.replace(</span><span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span><span class="s0">, </span><span class="s3">''</span><span class="s0">, </span><span class="s1">regex=</span><span class="s0">True</span><span class="s1">)</span>
+
+        <span class="s1">df[</span><span class="s3">&quot;Nombre ANID&quot;</span><span class="s1">] = df[</span><span class="s3">&quot;Nombre ANID&quot;</span><span class="s1">].str.lstrip(</span><span class="s3">' '</span><span class="s1">)</span>
+        <span class="s1">df[</span><span class="s3">&quot;RUT ANID&quot;</span><span class="s1">] = df[</span><span class="s3">&quot;RUT ANID&quot;</span><span class="s1">].str.lstrip(</span><span class="s3">' '</span><span class="s1">)</span>
+        <span class="s1">df[</span><span class="s3">&quot;Direccion ANID&quot;</span><span class="s1">] = df[</span><span class="s3">&quot;Direccion ANID&quot;</span><span class="s1">].str.lstrip(</span><span class="s3">' '</span><span class="s1">)</span>
+        <span class="s1">df[</span><span class="s3">&quot;Rut Emisor&quot;</span><span class="s1">] = df[</span><span class="s3">&quot;Rut Emisor&quot;</span><span class="s1">].str.lstrip(</span><span class="s3">' '</span><span class="s1">)</span>
+
+        <span class="s2">################################# COMPROBACION #############################################</span>
+        <span class="s1">df[</span><span class="s3">'Resultado'</span><span class="s1">] = df.apply(</span><span class="s0">lambda </span><span class="s1">x: </span><span class="s3">&quot;REVISAR&quot; </span><span class="s0">if </span><span class="s1">(x[</span><span class="s3">'Rut Emisor'</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Nº Boleta&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Nombre ANID&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;RUT ANID&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Direccion ANID&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Total Honorarios&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Impuestos&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Total&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;% Impuesto Retenido&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Fecha de Boleta&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot; </span><span class="s0">or</span>
+                                                           <span class="s1">x[</span><span class="s3">&quot;Detalle&quot;</span><span class="s1">] == </span><span class="s3">&quot;-&quot;</span><span class="s1">) </span><span class="s0">else </span><span class="s3">&quot;LECTURA EXITOSA&quot;</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)</span>
+
+        <span class="s1">df.loc[(df[</span><span class="s3">'Boleta'</span><span class="s1">] == </span><span class="s3">&quot;-&quot;</span><span class="s1">) &amp; (df[</span><span class="s3">'Rut Emisor'</span><span class="s1">] == </span><span class="s3">&quot;-&quot;</span><span class="s1">)</span><span class="s0">, </span><span class="s3">'Resultado'</span><span class="s1">] = </span><span class="s3">&quot;NO ES BOLETA / OTRO FORMATO&quot;</span>
+
+        <span class="s2"># df.to_csv(&quot;BOLETAS.csv&quot;, sep=';', encoding='latin-1', index=False, decimal=',')</span>
+
+        <span class="s1">writer = pd.ExcelWriter(</span><span class="s3">'BOLETAS (PDF).xlsx'</span><span class="s0">, </span><span class="s1">engine=</span><span class="s3">'xlsxwriter'</span><span class="s1">)</span>
+        <span class="s1">df.to_excel(writer</span><span class="s0">, </span><span class="s1">sheet_name=</span><span class="s3">'Boletas de Honorarios'</span><span class="s0">, </span><span class="s1">encoding=</span><span class="s3">'ascii'</span><span class="s0">, </span><span class="s1">index=</span><span class="s0">False</span><span class="s1">)</span>
+        <span class="s1">writer.save()</span>
+
+        <span class="s1">print(</span><span class="s3">&quot;Proceso Finalizado&quot;</span><span class="s1">)</span>
+
+        <span class="s1">dlg = QMessageBox(self)</span>
+        <span class="s1">dlg.setWindowTitle(</span><span class="s3">&quot;PDF a EXCEL&quot;</span><span class="s1">)</span>
+        <span class="s1">dlg.setText(</span><span class="s3">&quot;El archivo ha sido generado con un total de &quot; </span><span class="s1">+ str(len(listaPDF)) + </span><span class="s3">&quot; PDFs detectados.&quot;</span><span class="s1">)</span>
+        <span class="s1">button = dlg.exec_()</span>
+        <span class="s0">if </span><span class="s1">button == QMessageBox.Ok:</span>
+            <span class="s1">print(</span><span class="s3">&quot;OK!&quot;</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">merge_excel(self):</span>
+        <span class="s1">DETALLE = pd.read_excel(</span><span class="s3">&quot;DETALLE ENVIOS.xlsx&quot;</span><span class="s0">, </span><span class="s1">thousands=</span><span class="s3">'.'</span><span class="s1">)</span>
+        <span class="s1">BOLETAS = pd.read_excel(</span><span class="s3">&quot;BOLETAS (PDF).xlsx&quot;</span><span class="s0">, </span><span class="s1">thousands=</span><span class="s3">'.'</span><span class="s1">)</span>
+        <span class="s2">#BOLETAS[[&quot;Total Honorarios&quot;, &quot;Impuestos&quot;, &quot;Total&quot;]] = BOLETAS[[&quot;Total Honorarios&quot;, &quot;Impuestos&quot;, &quot;Total&quot;]].astype(str)</span>
+        <span class="s1">df = pd.merge(BOLETAS</span><span class="s0">, </span><span class="s1">DETALLE</span><span class="s0">, </span><span class="s1">on=[</span><span class="s3">'PDF'</span><span class="s1">]</span><span class="s0">, </span><span class="s1">how=</span><span class="s3">'inner'</span><span class="s1">)</span>
+        <span class="s1">df[[</span><span class="s3">'Fecha de envío'</span><span class="s0">, </span><span class="s3">'Hora de envío'</span><span class="s1">]] = df[</span><span class="s3">'Fecha de envío'</span><span class="s1">].str.split(</span><span class="s3">' '</span><span class="s0">, </span><span class="s1">expand=</span><span class="s0">True</span><span class="s1">)</span>
+        <span class="s1">df = df.fillna(</span><span class="s3">'-'</span><span class="s1">)</span>
+        <span class="s1">df = df[[</span><span class="s3">&quot;Nº&quot;</span><span class="s0">, </span><span class="s3">&quot;Correo&quot;</span><span class="s0">, </span><span class="s3">&quot;Fecha de envío&quot;</span><span class="s0">, </span><span class="s3">&quot;Hora de envío&quot;</span><span class="s0">, </span><span class="s3">&quot;PDF&quot;</span><span class="s0">, </span><span class="s3">&quot;Boleta&quot;</span><span class="s0">, </span><span class="s3">&quot;Rut Emisor&quot;</span><span class="s0">, </span><span class="s3">&quot;Nº Boleta&quot;</span><span class="s0">,</span>
+                 <span class="s3">&quot;Nombre ANID&quot;</span><span class="s0">, </span><span class="s3">&quot;RUT ANID&quot;</span><span class="s0">, </span><span class="s3">&quot;Direccion ANID&quot;</span><span class="s0">, </span><span class="s3">&quot;Total Honorarios&quot;</span><span class="s0">, </span><span class="s3">&quot;Impuestos&quot;</span><span class="s0">, </span><span class="s3">&quot;Total&quot;</span><span class="s0">,</span>
+                 <span class="s3">&quot;% Impuesto Retenido&quot;</span><span class="s0">, </span><span class="s3">&quot;Fecha de Boleta&quot;</span><span class="s0">, </span><span class="s3">&quot;Detalle&quot;</span><span class="s0">, </span><span class="s3">&quot;Resultado&quot;</span><span class="s1">]]</span>
+        <span class="s1">writer = pd.ExcelWriter(</span><span class="s3">'BOLETAS (TODO).xlsx'</span><span class="s0">, </span><span class="s1">engine=</span><span class="s3">'xlsxwriter'</span><span class="s1">)</span>
+        <span class="s1">df.to_excel(writer</span><span class="s0">, </span><span class="s1">sheet_name=</span><span class="s3">'Boletas de Honorarios'</span><span class="s0">, </span><span class="s1">encoding=</span><span class="s3">'ascii'</span><span class="s0">, </span><span class="s1">index=</span><span class="s0">False</span><span class="s1">)</span>
+        <span class="s0">for </span><span class="s1">column </span><span class="s0">in </span><span class="s1">df:</span>
+            <span class="s1">column_width = max(df[column].astype(str).map(len).max()</span><span class="s0">, </span><span class="s1">len(column))</span>
+            <span class="s1">col_idx = df.columns.get_loc(column)</span>
+            <span class="s1">writer.sheets[</span><span class="s3">'Boletas de Honorarios'</span><span class="s1">].set_column(col_idx</span><span class="s0">, </span><span class="s1">col_idx</span><span class="s0">, </span><span class="s1">column_width)</span>
+        <span class="s1">writer.save()</span>
+
+        <span class="s1">dlg = QMessageBox(self)</span>
+        <span class="s1">dlg.setWindowTitle(</span><span class="s3">&quot;Fechas de Correos&quot;</span><span class="s1">)</span>
+        <span class="s1">dlg.setText(</span><span class="s3">&quot;Se ha incorporado mail, hora y fecha de los adjuntos.&quot;</span><span class="s1">)</span>
+        <span class="s1">button = dlg.exec_()</span>
+        <span class="s0">if </span><span class="s1">button == QMessageBox.Ok:</span>
+            <span class="s1">print(</span><span class="s3">&quot;OK!&quot;</span><span class="s1">)</span>
+
+
+    <span class="s0">def </span><span class="s1">copy_and_rename(self):</span>
+        <span class="s1">direccion = Path.cwd() / </span><span class="s3">&quot;Boletas (PDF)&quot;</span>
+        <span class="s1">direccion.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+
+        <span class="s0">def </span><span class="s1">listarArchivos(direccion):</span>
+            <span class="s1">listaPDF = []</span>
+            <span class="s1">nombreArchivos = os.listdir(direccion)</span>
+            <span class="s0">for </span><span class="s1">archivo </span><span class="s0">in </span><span class="s1">nombreArchivos:</span>
+                <span class="s0">if </span><span class="s3">&quot;.pdf&quot; </span><span class="s0">in </span><span class="s1">archivo:</span>
+                    <span class="s1">listaPDF.append(archivo)</span>
+            <span class="s2">#listaPDF.sort(key=lambda x: os.path.getmtime(os.path.join(direccion, x)))</span>
+            <span class="s0">return </span><span class="s1">listaPDF</span>
+
+        <span class="s1">listaPDF = listarArchivos(direccion)</span>
+
+        <span class="s1">j = </span><span class="s4">0</span>
+        <span class="s0">while </span><span class="s1">j &lt; len(listaPDF):</span>
+            <span class="s1">folder = direccion / listaPDF[j]</span>
+            <span class="s1">output_dir = Path.cwd() / </span><span class="s3">&quot;Boletas Enumeradas&quot;</span>
+            <span class="s1">output_dir.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+            <span class="s1">filename = folder</span>
+            <span class="s1">filename_new = output_dir / </span><span class="s3">&quot;{:04n} - BHE.pdf&quot;</span><span class="s1">.format(j + </span><span class="s4">1</span><span class="s1">)</span>
+            <span class="s2">#pdf = Pdf.open(filename)</span>
+            <span class="s2">#pdf.save(filename_new)</span>
+            <span class="s1">shutil.copyfile(filename</span><span class="s0">, </span><span class="s1">filename_new)</span>
+            <span class="s1">print(</span><span class="s3">&quot;Boleta &quot; </span><span class="s1">+ listaPDF[j] + </span><span class="s3">&quot; renombrada como {:04n} - BOLETA.pdf&quot;</span><span class="s1">.format(j+</span><span class="s4">1</span><span class="s1">))</span>
+            <span class="s1">j += </span><span class="s4">1</span>
+        <span class="s1">dlg = QMessageBox(self)</span>
+        <span class="s1">dlg.setWindowTitle(</span><span class="s3">&quot;Enumeración de Archivos&quot;</span><span class="s1">)</span>
+        <span class="s1">dlg.setText(str(len(listaPDF)) + </span><span class="s3">&quot; archivos han sido enumerados.&quot;</span><span class="s1">)</span>
+        <span class="s1">button = dlg.exec_()</span>
+        <span class="s0">if </span><span class="s1">button == QMessageBox.Ok:</span>
+            <span class="s1">print(</span><span class="s3">&quot;OK!&quot;</span><span class="s1">)</span>
+
+
+    <span class="s0">def </span><span class="s1">fusionar(self):</span>
+        <span class="s2">#https://stackoverflow.com/questions/3444645/merge-pdf-files</span>
+        <span class="s2">#pip install PyMuPDF</span>
+        <span class="s1">direccion = Path.cwd() / </span><span class="s3">&quot;Boletas Enumeradas&quot;</span>
+        <span class="s1">direccion.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+
+        <span class="s0">def </span><span class="s1">listarArchivos(direccion):</span>
+            <span class="s1">listaPDF = []</span>
+            <span class="s1">nombreArchivos = os.listdir(direccion)</span>
+            <span class="s0">for </span><span class="s1">archivo </span><span class="s0">in </span><span class="s1">nombreArchivos:</span>
+                <span class="s0">if </span><span class="s3">&quot;.pdf&quot; </span><span class="s0">in </span><span class="s1">archivo:</span>
+                    <span class="s1">listaPDF.append(archivo)</span>
+            <span class="s2">#listaPDF.sort(key=lambda x: os.path.getmtime(os.path.join(direccion, x)))</span>
+            <span class="s0">return </span><span class="s1">listaPDF</span>
+
+        <span class="s1">listaPDF = listarArchivos(direccion)</span>
+
+        <span class="s1">pdfs = fitz.open()</span>
+        <span class="s1">z = </span><span class="s4">1</span>
+        <span class="s1">j = </span><span class="s4">0</span>
+        <span class="s0">while </span><span class="s1">j &lt; len(listaPDF):</span>
+            <span class="s1">file = direccion / listaPDF[j]</span>
+            <span class="s1">mfile = fitz.open(file)</span>
+            <span class="s1">output_dir = Path.cwd() / </span><span class="s3">&quot;Fusion PDFs&quot;</span>
+            <span class="s1">output_dir.mkdir(parents=</span><span class="s0">True, </span><span class="s1">exist_ok=</span><span class="s0">True</span><span class="s1">)</span>
+            <span class="s1">x = D(str((j + </span><span class="s4">1</span><span class="s1">) / </span><span class="s4">50</span><span class="s1">))</span>
+            <span class="s1">print(x)</span>
+            <span class="s1">pdfs.insertPDF(mfile)</span>
+            <span class="s0">if </span><span class="s1">D(x) == D(z) </span><span class="s0">and </span><span class="s1">D(x) &lt; D(str(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">))):</span>
+                <span class="s1">nombre_archivo_salida = str(output_dir) + </span><span class="s3">&quot;/&quot; </span><span class="s1">+ </span><span class="s3">&quot;TED ({}).pdf&quot;</span><span class="s1">.format(z)</span>
+                <span class="s1">print(nombre_archivo_salida)</span>
+                <span class="s1">pdfs.save(nombre_archivo_salida)</span>
+                <span class="s1">pdfs = fitz.open()</span>
+                <span class="s1">z += </span><span class="s4">1</span>
+                <span class="s1">print(z)</span>
+                <span class="s1">print(x)</span>
+                <span class="s1">print(</span><span class="s3">&quot;Lote &quot; </span><span class="s1">+ str(z) + </span><span class="s3">&quot; de &quot; </span><span class="s1">+ str(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">)))</span>
+            <span class="s0">elif </span><span class="s1">D(x) == D(str((len(listaPDF) / </span><span class="s4">50</span><span class="s1">))):</span>
+                <span class="s1">nombre_archivo_salida = output_dir / </span><span class="s3">&quot;TED ({}).pdf&quot;</span><span class="s1">.format(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">))</span>
+                <span class="s1">print(nombre_archivo_salida)</span>
+                <span class="s1">pdfs.save(nombre_archivo_salida)</span>
+                <span class="s1">print(</span><span class="s3">&quot;Lote &quot; </span><span class="s1">+ str(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">)) + </span><span class="s3">&quot; de &quot; </span><span class="s1">+ str(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">)))</span>
+                <span class="s1">print(z)</span>
+                <span class="s1">print(x)</span>
+            <span class="s1">j += </span><span class="s4">1</span>
+        <span class="s1">dlg = QMessageBox(self)</span>
+        <span class="s1">dlg.setWindowTitle(</span><span class="s3">&quot;Fusión de PDFs&quot;</span><span class="s1">)</span>
+        <span class="s1">dlg.setText(</span><span class="s3">&quot;Se han generado &quot; </span><span class="s1">+ str(math.ceil(len(listaPDF) / </span><span class="s4">50</span><span class="s1">)) + </span><span class="s3">&quot; fusiones de PDFs para la elaboración de TEDs&quot;</span><span class="s1">)</span>
+        <span class="s1">button = dlg.exec_()</span>
+        <span class="s0">if </span><span class="s1">button == QMessageBox.Ok:</span>
+            <span class="s1">print(</span><span class="s3">&quot;OK!&quot;</span><span class="s1">)</span>
+
+
+<span class="s0">def </span><span class="s1">main():</span>
+    <span class="s1">os.environ[</span><span class="s3">&quot;QT_AUTO_SCREEN_SCALE_FACTOR&quot;</span><span class="s1">] = </span><span class="s3">&quot;1&quot;</span>
+    <span class="s1">app = QApplication([])</span>
+    <span class="s1">app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)</span>
+    <span class="s1">window = MyGUI()</span>
+    <span class="s2">#qtmodern.styles.dark(app)</span>
+    <span class="s1">qtmodern.styles._apply_base_theme(app)</span>
+    <span class="s1">mw = qtmodern.windows.ModernWindow(window)</span>
+    <span class="s1">mw.show()</span>
+    <span class="s1">app.exec_()</span>
+
+<span class="s0">if </span><span class="s1">__name__ == </span><span class="s3">'__main__'</span><span class="s1">:</span>
+    <span class="s1">main()</span></pre>
+</body>
+</html>
