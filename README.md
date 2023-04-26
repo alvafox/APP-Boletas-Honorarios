@@ -46,7 +46,8 @@ En la APP, seleccionar el rango de fechas para descargar todos los archivos adju
 
 # 4 - Lectura de Boletas
 
-Presionar el botón "Generar EXCEL", mediante esta lectura se genera la planilla para gestionar la información.
+Una vez que se descargaron todos los archivos .PDF de la bandeja de entrada, es necesario eliminar los documentos que no sean boletas de honorarios. Una vez que en la carpeta se cuente solo con boletas de honorarios, presionar el botón "Generar EXCEL", mediante esta lectura se genera la planilla para gestionar la información.
+
 <div align="center">
     <img src="imagenes/Generar.png" alt="Texto alternativo de la imagen">
 </div>
