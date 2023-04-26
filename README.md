@@ -4,13 +4,20 @@ APP para la lectura de boletas de honorarios emitidas por el SII en formato PDF.
 
 La aplicacion puede leer masivamente boletas de honorarios para dejar los datos en una planilla Excel.
 
-# 0  Clonar el repositorio en la versión de escritorio de Pycharm.
+# 0 - Clonar el repositorio en la versión de escritorio de Pycharm.
 
 <div align="center">
     <img src="imagenes/Clonar.png" alt="Texto alternativo de la imagen">
 </div>
 
-# 1 Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. 
+Ingresar la URL del proyecto y luego presionar el botón ACEPTAR.
+<div align="center">
+    <img src="imagenes/Clonar-Repo.png" alt="Texto alternativo de la imagen">
+</div>
+
+# 1 - Instalar librerías del proyecto.
+
+Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. 
 
 <div align="center">
     <img src="imagenes/Librerias.png" alt="Texto alternativo de la imagen">
