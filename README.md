@@ -28,7 +28,7 @@ Luego de clonar el repositorio, es necesario installar las librerias que permiti
 
 En la consola es necesario ejecutar la siguiente línea: pyinstaller --onefile --name "APP BOLETAS (NUEVO)" --hiddenimport win32timezone -F --add-data "Gui.ui;ui" main.py
 
-Luego en la capreta dist estará un archivo autoejecutable que puede buscar y registrar las boletas de honorarios. Es importante que la aplicación de OUTLOOK este instalada en el escritorio del computador y las boletas deben estar almacenadas en la carpeta por defecto. Por ejemplo, la "Bandeja de entrada". Cualquier otra boleta que no esté dicha carpeta por defecto, no será descargada.
+Luego en la capreta dist estará un archivo autoejecutable que puede buscar y registrar las boletas de honorarios. Es importante que la aplicación de OUTLOOK este instalada en el escritorio del computador y las boletas deben estar almacenadas en la carpeta por defecto ("Bandeja de entrada"). Cualquier otra boleta que no esté dicha carpeta por defecto, no será descargada.
 
 <div align="center">
     <img src="imagenes/comando.png" alt="Texto alternativo de la imagen">
