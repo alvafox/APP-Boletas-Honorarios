@@ -37,7 +37,7 @@ Luego en la capreta dist estará un archivo autoejecutable que puede buscar y re
     <img src="imagenes/comando.png" alt="Texto alternativo de la imagen">
 </div>
 
-# 3 - Se produce la APP en la carpeta "dis".
+# 3 - Se produce la APP en la carpeta "dist".
 
 Se llevará a cabo el encapsulamiento del proyecto, mediante el nombre que se definió en el paso anterior "--name "APP BOLETAS (NUEVO)".
 
