@@ -20,15 +20,16 @@ Ingresar la URL del proyecto y luego presionar el botón CLONE.
 Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. Executar la siguiente línea en la consula del entorno virtual del proyecto.
 
 ```
-
 pip install -r requirements.txt
-
 ```
-
 
 # 2 - Encapsular el proyecto para producir el archivo autoejecutable (.EXE).
 
-En la consola es necesario ejecutar la siguiente línea: pyinstaller --onefile --name "APP BOLETAS (NUEVO)" --hiddenimport win32timezone -F --add-data "Gui.ui;ui" main.py
+En la consola es necesario ejecutar la siguiente línea: 
+```
+pyinstaller --onefile --name "APP BOLETAS (NUEVO)" --hiddenimport win32timezone -F --add-data "Gui.ui;ui" main.py
+
+```
 
 Luego en la capreta dist estará un archivo autoejecutable que puede buscar y registrar las boletas de honorarios. 
 
