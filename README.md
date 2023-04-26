@@ -10,7 +10,7 @@ La aplicacion puede leer masivamente boletas de honorarios para dejar los datos 
     <img src="imagenes/Clonar.png" alt="Texto alternativo de la imagen">
 </div>
 
-Ingresar la URL del proyecto y luego presionar el botón ACEPTAR.
+Ingresar la URL del proyecto y luego presionar el botón CLONE.
 <div align="center">
     <img src="imagenes/Clonar-Repo.png" alt="Texto alternativo de la imagen">
 </div>
