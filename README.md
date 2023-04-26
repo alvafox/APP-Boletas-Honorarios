@@ -24,7 +24,7 @@ Luego de clonar el repositorio, es necesario installar las librerias que permiti
 </div>
 
 
-# 2 - Aplicar la línea en la consola.
+# 2 - Encapsular el proyecto para producir el archivo autoejecutable (.EXE).
 
 En la consola es necesario ejecutar la siguiente línea: pyinstaller --onefile --name "APP BOLETAS (NUEVO)" --hiddenimport win32timezone -F --add-data "Gui.ui;ui" main.py
 
