@@ -9,4 +9,4 @@ En la consola es necesario ejecutar la siguiente linea: pyinstaller --onefile --
 Luego en la capreta dist estará un archivo autoejecutable que puede buscar y registrar las boletas de honorarios. Es importante que la aplicación de OUTLOOK este instalada en el escritorio del computador y las boletas deben estar almacenadas en la carpeta por defecto. Por ejemplo, la "Bandeja de entrada". Cualquier otra boleta que no esté dicha carpeta por defecto, no será descargada.
 
 
-![Ejemplo de imagen](APP.png =250x250)
+![Ejemplo de imagen](APP.png)
