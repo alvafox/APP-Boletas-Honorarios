@@ -55,6 +55,10 @@ Una vez que se descargaron todos los archivos .PDF de la bandeja de entrada, es 
     <img src="imagenes/Generar.png" alt="Texto alternativo de la imagen">
 </div>
 
+<div align="center">
+    <img src="imagenes/Lectura-Boletas.png" alt="Texto alternativo de la imagen">
+</div>
+
 # 5 - Tabulación de datos
 
 El producto es una planilla Excel, mediante la cual se facilitara la gestion masiva de Boletas de Honorarios.
