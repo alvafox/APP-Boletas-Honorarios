@@ -1,8 +1,7 @@
 # APP-Boletas-Honorarios
 
-APP para la lectura de boletas de honorarios emitidas por el SII en formato PDF.
-
-La aplicacion puede leer masivamente boletas de honorarios para dejar los datos en una planilla Excel.
+Aplicación autoejecutable en lenguaje Python, cuya función es la descarga masiva de boletas de honorarios recibidas por la Subdirección de Capital Humano. La aplicación también permite la lectura masiva de las boletas en archivos PDF (datos no esctructurados), para luego registrarlas en un archivo Excel (datos tabulados), asi como también realizar una fusión masiva de los archivos en PDF para la posterior tramitación de los pagos. La aplicación facilita la gestión de las boletas de honorarios y se trabajó en conjunto con la Unidad de
+Control de Gestión y la Unidad de Gestión Financiera y Presupuesto.
 
 # 0 - Clonar el repositorio en la versión de escritorio de Pycharm.
 
