@@ -25,6 +25,8 @@ context.rounding = decimal.ROUND_HALF_UP
 
 #Para arreglar textos (experimental)
 import ftfy
+from tqdm import tqdm
+
 from Gui import Ui_MainWindow
 Ui_MainWindow, QtBaseClass = uic.loadUiType('Gui.ui')
 
@@ -125,8 +127,7 @@ class MyGUI(QMainWindow):
             outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
             inbox = outlook.Folders(str(outlook.Folders.Item(1))).Folders(str(inbox))
             messages = inbox.Items
-            messages = messages.Restrict(
-                "[ReceivedTime] >= '" + start_time + "' And [ReceivedTime] <= '" + end_time + "'")
+            messages = messages.Restrict("[ReceivedTime] >= '" + start_time + "' And [ReceivedTime] <= '" + end_time + "'")
         elif mail == "" and inbox == "" and sender != "" and subject == "":
             outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
             inbox = outlook.GetDefaultFolder(6)
@@ -290,37 +291,38 @@ class MyGUI(QMainWindow):
     def PDF(self):
         direccion = Path.cwd() / "Boletas (PDF)"
         direccion.mkdir(parents=True, exist_ok=True)
+
         def listarArchivos(direccion):
             listaPDF = []
             nombreArchivos = os.listdir(direccion)
             for archivo in nombreArchivos:
                 if ".pdf" in archivo:
                     listaPDF.append(archivo)
-            #listaPDF.sort(key=lambda x: os.path.getmtime(os.path.join(direccion, x)))
+            # listaPdf.sort(key=lambda x: os.path.getmtime(os.path.join(direccion, x)))
             return listaPDF
 
         listaPDF = listarArchivos(direccion)
-        N = []
-        LISTA_BOLETA_PDF = []
-        LISTA_NOMBRE = []
-        LISTA_BOLETA = []
-        LISTA_NUMERO_BOLETA = []
-        LISTA_FECHA_INGRESADA = []
-        LISTA_NOMBRE_ANID = []
-        LISTA_RUT_ANID = []
-        LISTA_DIRECCION_ANID = []
-        LISTA_RUT_EMISOR = []
-        LISTA_PORCENTAJE_IMPUESTO_RETENIDO = []
-        LISTA_HONORARIOS = []
-        LISTA_IMPUESTO_RETENIDO = []
-        LISTA_TOTAL = []
-        LISTA_FECHA_EMISION = []
-        LISTA_DETALLE = []
-        j = 0
-        while j < len(listaPDF):
-            N.append(j + 1)
-            print(str("número ") + str(j + 1) + str(" de ") + str(len(listaPDF)) + " " + str(listaPDF[j]))
-            target_folder = direccion / listaPDF[j]
+        df = pd.DataFrame()
+        df["N"] = [i + 1 for i in range(len(listaPDF))]
+        df["PDF"] = pd.DataFrame(listaPDF)
+        df["Boleta"] = ""
+        df["Rut Emisor"] = ""
+        df["Nº Boleta"] = ""
+        df["Nombre ANID"] = ""
+        df["RUT ANID"] = ""
+        df["Direccion ANID"] = ""
+        df["Total Honorarios"] = ""
+        df["Impuestos"] = ""
+        df["Total"] = ""
+        df["% Impuesto Retenido"] = ""
+        df["Fecha de Boleta"] = ""
+        df["Fecha de Emisión"] = ""
+        df["Detalle"] = ""
+
+        for index, row in tqdm(df.iterrows(), total=len(df)):
+            print(str("número ") + str(int(index) + 1) + str(" de ") + str(len(df["PDF"])) + " | Boleta Nombre: " + str(
+                df.at[index, "PDF"]))
+            target_folder = direccion / df.at[index, "PDF"]
             filename = target_folder
             pdfFile = open(filename, 'rb')  # open function reads the file
             pdfReader = PyPDF2.PdfFileReader(pdfFile, strict=False)
@@ -336,8 +338,7 @@ class MyGUI(QMainWindow):
                 text += pageObj.extractText()
             text = ftfy.fix_text(text)
             print(text)
-            # PDF NOMBRE
-            LISTA_BOLETA_PDF.append(listaPDF[j])
+            # Pdf NOMBRE
             ####################  NOMBRE  #########################
             if 'BOLETA ' in text:
                 #    start = text.index('$')
@@ -345,23 +346,11 @@ class MyGUI(QMainWindow):
                 NOMBRE = text[0:end]
                 print(f"Start: {0}, End: {end}")
                 print(NOMBRE)
-                LISTA_NOMBRE.append(NOMBRE)
+                df.at[index, "Boleta"] = NOMBRE
             else:
                 NOMBRE = "-"
                 print(NOMBRE)
-                LISTA_NOMBRE.append(NOMBRE)
-            ####################  BOLETA  #########################
-            if 'BOLETA ' in text and 'N °' in text:
-                start = text.index('BOLETA')
-                end = text.index('N °', start + 1)
-                BOLETA = text[0:end]
-                print(f"Start: {0}, End: {end}")
-                print(BOLETA)
-                LISTA_BOLETA.append(BOLETA)
-            else:
-                BOLETA = "-"
-                print(BOLETA)
-                LISTA_BOLETA.append(BOLETA)
+                df.at[index, "Boleta"] = NOMBRE
             ################# NUMERO DE BOLETA ###################
             if 'N ° ' in text and 'RUT:' in text:
                 start = text.index('N ° ') + len('N ° ')
@@ -369,11 +358,11 @@ class MyGUI(QMainWindow):
                 NUMERO_BOLETA = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(NUMERO_BOLETA)
-                LISTA_NUMERO_BOLETA.append(NUMERO_BOLETA)
+                df.at[index, "Nº Boleta"] = NUMERO_BOLETA
             else:
                 NUMERO_BOLETA = "-"
                 print(NUMERO_BOLETA)
-                LISTA_NUMERO_BOLETA.append(NUMERO_BOLETA)
+                df.at[index, "Nº Boleta"] = NUMERO_BOLETA
             ################## Fecha INGRESADA ###################
             if 'Fecha:' in text and 'Señor(es):' in text:
                 start = text.index('Fecha:') + len('Fecha:')
@@ -381,11 +370,11 @@ class MyGUI(QMainWindow):
                 FECHA_EVALUADOR = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(FECHA_EVALUADOR)
-                LISTA_FECHA_INGRESADA.append(FECHA_EVALUADOR)
+                df.at[index, "Fecha de Boleta"] = FECHA_EVALUADOR
             else:
                 FECHA_EVALUADOR = "-"
                 print(FECHA_EVALUADOR)
-                LISTA_FECHA_INGRESADA.append(FECHA_EVALUADOR)
+                df.at[index, "Fecha de Boleta"] = FECHA_EVALUADOR
             ################## Nombre ANID ###################
             if 'Señor(es):' in text and 'Rut:' in text:
                 start = text.index('Señor(es):') + len("Señor(es):")
@@ -393,11 +382,11 @@ class MyGUI(QMainWindow):
                 NOMBRE_ANID = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(NOMBRE_ANID)
-                LISTA_NOMBRE_ANID.append(NOMBRE_ANID)
+                df.at[index, "Nombre ANID"] = NOMBRE_ANID
             else:
                 NOMBRE_ANID = "-"
                 print(NOMBRE_ANID)
-                LISTA_NOMBRE_ANID.append(NOMBRE_ANID)
+                df.at[index, "Nombre ANID"] = NOMBRE_ANID
             ################## Rut ANID ###################
             if 'Rut:' in text and 'Domicilio:' in text:
                 start = text.index('Rut:') + len("Rut:")
@@ -405,11 +394,11 @@ class MyGUI(QMainWindow):
                 RUT_ANID = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(RUT_ANID)
-                LISTA_RUT_ANID.append(RUT_ANID)
+                df.at[index, "RUT ANID"] = RUT_ANID
             else:
                 RUT_ANID = "-"
                 print(RUT_ANID)
-                LISTA_RUT_ANID.append(RUT_ANID)
+                df.at[index, "RUT ANID"] = RUT_ANID
             ################## DIRECCION ANID ###################
             if 'Domicilio:' in text and 'Por atención profesional:' in text:
                 start = text.index('Domicilio:') + len('Domicilio:')
@@ -417,11 +406,11 @@ class MyGUI(QMainWindow):
                 DIRECCION_ANID = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(DIRECCION_ANID)
-                LISTA_DIRECCION_ANID.append(DIRECCION_ANID)
+                df.at[index, "Direccion ANID"] = DIRECCION_ANID
             else:
                 DIRECCION_ANID = "-"
                 print(DIRECCION_ANID)
-                LISTA_DIRECCION_ANID.append(DIRECCION_ANID)
+                df.at[index, "Direccion ANID"] = DIRECCION_ANID
             ################## RUT EMISOR #######################
             if 'RUT:' in text and 'GIRO(S)' in text:
                 start = text.index('RUT:') + len('RUT:')
@@ -429,11 +418,11 @@ class MyGUI(QMainWindow):
                 RUT_EMISOR = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(RUT_EMISOR)
-                LISTA_RUT_EMISOR.append(RUT_EMISOR)
+                df.at[index, "Rut Emisor"] = RUT_EMISOR
             else:
                 RUT_EMISOR = "-"
                 print(RUT_EMISOR)
-                LISTA_RUT_EMISOR.append(RUT_EMISOR)
+                df.at[index, "Rut Emisor"] = RUT_EMISOR
             ################## HONORARIOS ###################
             if 'Total Honorarios $:' in text and ('10.75 % Impto.' or '11.50 % Impto.' or '11.5 % Impto.' or
                                                   '12.25 % Impto.' or '13 % Impto.' or '13.0 % Impto.' or '13.00 % Impto.' or '13.75 % Impto.' or
@@ -442,91 +431,109 @@ class MyGUI(QMainWindow):
                 start = text.index('Total Honorarios $:') + len("Total Honorarios $:")
                 if '10.75 % Impto.' in text:
                     end = text.index('10.75 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('10.75 %')
+                    df.at[index, "% Impuesto Retenido"] = '10.75 %'
+                    print(f"Start: {start}, End: {end}")
                     print('10.75 %')
                 elif '11.5 % Impto.' in text:
                     end = text.index('11.5 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('11.5 %')
+                    df.at[index, "% Impuesto Retenido"] = '11.5 %'
+                    print(f"Start: {start}, End: {end}")
                     print('11.5 %')
                 elif '11.50 % Impto.' in text:
                     end = text.index('11.50 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('11.50 %')
+                    df.at[index, "% Impuesto Retenido"] = '11.50 %'
+                    print(f"Start: {start}, End: {end}")
                     print('11.50 %')
                 elif '12.25 % Impto.' in text:
                     end = text.index('12.25 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('12.25 %')
+                    df.at[index, "% Impuesto Retenido"] = '12.25 %'
+                    print(f"Start: {start}, End: {end}")
                     print('12.25 %')
                 elif '13 % Impto.' in text:
                     end = text.index('13 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('13 %')
+                    df.at[index, "% Impuesto Retenido"] = '13 %'
+                    print(f"Start: {start}, End: {end}")
                     print('13 %')
                 elif '13.0 % Impto.' in text:
                     end = text.index('13.0 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('13.0 %')
+                    df.at[index, "% Impuesto Retenido"] = '13.0 %'
+                    print(f"Start: {start}, End: {end}")
                     print('13.0 %')
                 elif '13.00 % Impto.' in text:
                     end = text.index('13.00 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('13.00 %')
+                    df.at[index, "% Impuesto Retenido"] = '13.00 %'
+                    print(f"Start: {start}, End: {end}")
                     print('13.00 %')
                 elif '13.75 % Impto.' in text:
                     end = text.index('13.75 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('13.75 %')
+                    df.at[index, "% Impuesto Retenido"] = '13.75 %'
+                    print(f"Start: {start}, End: {end}")
                     print('13.75 %')
                 elif '14.5 % Impto.' in text:
                     end = text.index('14.5 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('14.5 %')
+                    df.at[index, "% Impuesto Retenido"] = '14.5 %'
+                    print(f"Start: {start}, End: {end}")
                     print('14.5 %')
                 elif '14.50 % Impto.' in text:
                     end = text.index('14.50 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('14.50 %')
+                    df.at[index, "% Impuesto Retenido"] = '14.50 %'
+                    print(f"Start: {start}, End: {end}")
                     print('14.50 %')
                 elif '15.25 % Impto.' in text:
                     end = text.index('15.25 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('15.25 %')
+                    df.at[index, "% Impuesto Retenido"] = '15.25 %'
+                    print(f"Start: {start}, End: {end}")
                     print('15.25 %')
                 elif '16 % Impto.' in text:
                     end = text.index('16 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('16 %')
+                    df.at[index, "% Impuesto Retenido"] = '16 %'
+                    print(f"Start: {start}, End: {end}")
                     print('16 % Impto.')
                 elif '16.0 % Impto.' in text:
                     end = text.index('16.0 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('16.0 %')
+                    df.at[index, "% Impuesto Retenido"] = '16.0 %'
+                    print(f"Start: {start}, End: {end}")
                     print('16.0 % Impto.')
                 elif '16.00 % Impto.' in text:
                     end = text.index('16.00 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('16.00 %')
+                    df.at[index, "% Impuesto Retenido"] = '16.00 %'
+                    print(f"Start: {start}, End: {end}")
                     print('16.00 % Impto.')
                 elif '17 % Impto.' in text:
                     end = text.index('17 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('17 %')
+                    df.at[index, "% Impuesto Retenido"] = '17 %'
+                    print(f"Start: {start}, End: {end}")
                     print('17 %')
                 elif '17.0 % Impto.' in text:
                     end = text.index('17.0 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('17.0 %')
+                    df.at[index, "% Impuesto Retenido"] = '17.0 %'
+                    print(f"Start: {start}, End: {end}")
                     print('17.0 %')
                 elif '17.00 % Impto.' in text:
                     end = text.index('17.00 % Impto.', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('17.00 %')
+                    df.at[index, "% Impuesto Retenido"] = '17.00 %'
+                    print(f"Start: {start}, End: {end}")
                     print('17.00 %')
                 else:
                     end = text.index('Fecha / Hora', start + 1)
-                    LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('-')
+                    df.at[index, "% Impuesto Retenido"] = '-'
+                    print(f"Start: {start}, End: {end}")
                     print('-')
-                if end > start: # Significa que encontró el final y es mayor a 'Total Honorarios $:', si no encuentra la retenciòn ocupa el "Fecha / Hora" que es el siguiente texto que viene cuando no hay retención.
+                if end > start:  # Significa que encontró el final y es mayor a 'Total Honorarios $:', si no encuentra la retenciòn ocupa el "Fecha / Hora" que es el siguiente texto que viene cuando no hay retención.
                     HONORARIOS = text[start:end]
                     print(f"Start: {start}, End: {end}")
                     print(HONORARIOS)
-                    LISTA_HONORARIOS.append(HONORARIOS)
-                else: # En este else no encontrò ni el '%' ni 'Fecha /hora'.
+                    df.at[index, "Total Honorarios"] = HONORARIOS
+                else:  # En este else no encontrò ni el '%' ni 'Fecha /hora'.
                     HONORARIOS = "-"
                     print(f"Start: {start}, End: {end}")
                     print(HONORARIOS)
-                    LISTA_HONORARIOS.append(HONORARIOS)
-            else: # Si no encuentra ningun 'Total Honorarios $:' entonces incorpora un "-" a honorarios y a impuesto retenido.
-                LISTA_PORCENTAJE_IMPUESTO_RETENIDO.append('-')
-                HONORARIOS = "-"
-                print(HONORARIOS)
-                LISTA_HONORARIOS.append(HONORARIOS)
+                    df.at[index, "Total Honorarios"] = HONORARIOS
+            else:  # Si no encuentra ningun 'Total Honorarios $:' entonces incorpora un "-" a honorarios y a impuesto retenido.
+                df.at[index, "% Impuesto Retenido"] = '-'
+                df.at[index, "Total Honorarios"] = '-'
+                print(df.at[index, "% Impuesto Retenido"])
+                print(df.at[index, "Total Honorarios"])
             ################## IMPUESTO RETENIDO ###################
             if 'Impto. Retenido:' in text and 'Total:' in text:
                 start = text.index('Impto. Retenido:') + len('Impto. Retenido:')
@@ -534,11 +541,11 @@ class MyGUI(QMainWindow):
                 IMPUESTO_RETENIDO = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(IMPUESTO_RETENIDO)
-                LISTA_IMPUESTO_RETENIDO.append(IMPUESTO_RETENIDO)
+                df.at[index, "Impuestos"] = IMPUESTO_RETENIDO
             else:
                 IMPUESTO_RETENIDO = "-"
                 print(IMPUESTO_RETENIDO)
-                LISTA_IMPUESTO_RETENIDO.append(IMPUESTO_RETENIDO)
+                df.at[index, "Impuestos"] = IMPUESTO_RETENIDO
             ################## TOTAL ###################
             if 'Total:' in text and ('Esta boleta tiene una retención' or 'Fecha / Hora' in text):
                 start = text.index('Total:') + len('Total:')
@@ -549,11 +556,11 @@ class MyGUI(QMainWindow):
                 TOTAL = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(TOTAL)
-                LISTA_TOTAL.append(TOTAL)
+                df.at[index, "Total"] = TOTAL
             else:
                 TOTAL = "-"
                 print(TOTAL)
-                LISTA_TOTAL.append(TOTAL)
+                df.at[index, "Total"] = TOTAL
             ################## FECHA_EMISION ##################
             if 'Fecha / Hora' in text:
                 start = text.index('Fecha / Hora') + len('Fecha / Hora Emisión: ')
@@ -561,11 +568,11 @@ class MyGUI(QMainWindow):
                 FECHA_EMISION = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(FECHA_EMISION)
-                LISTA_FECHA_EMISION.append(FECHA_EMISION)
+                df.at[index, "Fecha de Emisión"] = FECHA_EMISION
             else:
                 FECHA_EMISION = "-"
                 print(FECHA_EMISION)
-                LISTA_FECHA_EMISION.append(FECHA_EMISION)
+                df.at[index, "Fecha de Emisión"] = FECHA_EMISION
             ################## DETALLE ##################
             if 'Por atenci' in text and 'Total Honorarios $:' in text:
                 start = text.index('Por atenci') + len('Por atención profesional:')
@@ -573,44 +580,26 @@ class MyGUI(QMainWindow):
                 DETALLE = text[start:end]
                 print(f"Start: {start}, End: {end}")
                 print(DETALLE)
-                LISTA_DETALLE.append(DETALLE)
+                df.at[index, "Detalle"] = DETALLE
             else:
                 DETALLE = "-"
                 print(DETALLE)
-                LISTA_DETALLE.append(DETALLE)
-            j += 1
-
-        df = pd.DataFrame()
-        df["N"] = N
-        df["PDF"] = LISTA_BOLETA_PDF
-        #df["Boleta"] = LISTA_BOLETA
-        df["Boleta"] = LISTA_NOMBRE
-        df["Rut Emisor"] = LISTA_RUT_EMISOR
-        df["Nº Boleta"] = LISTA_NUMERO_BOLETA
-        df["Nombre ANID"] = LISTA_NOMBRE_ANID
-        df["RUT ANID"] = LISTA_RUT_ANID
-        df["Direccion ANID"] = LISTA_DIRECCION_ANID
-        df["Total Honorarios"] = LISTA_HONORARIOS
-        df["Impuestos"] = LISTA_IMPUESTO_RETENIDO
-        df["Total"] = LISTA_TOTAL
-        df["% Impuesto Retenido"] = LISTA_PORCENTAJE_IMPUESTO_RETENIDO
-        df["Fecha de Boleta"] = LISTA_FECHA_INGRESADA
-        df["Fecha de Emisión"] = LISTA_FECHA_EMISION
-        df["Detalle"] = LISTA_DETALLE
+                df.at[index, "Detalle"] = DETALLE
 
         df = df.replace('\n', '', regex=True)
 
-        df["Nombre ANID"] = df["Nombre ANID"].str.lstrip(' ')
-        df["RUT ANID"] = df["RUT ANID"].str.lstrip(' ')
-        df["Direccion ANID"] = df["Direccion ANID"].str.lstrip(' ')
-        df["Rut Emisor"] = df["Rut Emisor"].str.lstrip(' ')
+        df["Nombre ANID"] = df["Nombre ANID"].str.lstrip()
+        df["RUT ANID"] = df["RUT ANID"].str.lstrip()
+        df["Direccion ANID"] = df["Direccion ANID"].str.lstrip()
+        df["Rut Emisor"] = df["Rut Emisor"].str.lstrip()
         df["Total Honorarios"] = df["Total Honorarios"].str.lstrip()
         df["Impuestos"] = df["Impuestos"].str.lstrip()
         df["Total"] = df["Total"].str.lstrip()
         df["Fecha de Boleta"] = df["Fecha de Boleta"].str.lstrip()
 
         ################################# COMPROBACION #############################################
-        df['Resultado'] = df.apply(lambda x: "REVISAR" if (x['Rut Emisor'] == "-" or
+        df['Resultado'] = df.apply(lambda x: "REVISAR" if (x["Boleta"] == "-" or
+                                                           x["Rut Emisor"] == "-" or
                                                            x["Nº Boleta"] == "-" or
                                                            x["Nombre ANID"] == "-" or
                                                            x["RUT ANID"] == "-" or
@@ -620,14 +609,16 @@ class MyGUI(QMainWindow):
                                                            x["Total"] == "-" or
                                                            x["% Impuesto Retenido"] == "-" or
                                                            x["Fecha de Boleta"] == "-" or
+                                                           x["Fecha de Emisión"] == "-" or
                                                            x["Detalle"] == "-") else "LECTURA EXITOSA", axis=1)
-
-        df.loc[(df['Boleta'] == "-") & (df['Rut Emisor'] == "-"), 'Resultado'] = "NO ES BOLETA / OTRO FORMATO"
 
         # df.to_csv("BOLETAS.csv", sep=';', encoding='latin-1', index=False, decimal=',')
 
+        dpl = df.groupby(["Boleta", "Nº Boleta"], as_index=False)["PDF"].count()
+
         writer = pd.ExcelWriter('BOLETAS (PDF).xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Boletas de Honorarios', index=False)
+        dpl.to_excel(writer, sheet_name='Conteo por Evaluador', index=False)
         writer.close()
 
         print("Proceso Finalizado")
@@ -638,6 +629,7 @@ class MyGUI(QMainWindow):
         button = dlg.exec_()
         if button == QMessageBox.Ok:
             print("OK!")
+
 
     def merge_excel(self):
         DETALLE = pd.read_excel("DETALLE ENVIOS.xlsx", thousands='.')
