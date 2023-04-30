@@ -21,7 +21,7 @@ Luego de clonar el repositorio, es necesario installar las librerias que permiti
 pip install -r requirements.txt
 ```
 
-# 2 - Encapsular el proyecto para producir el archivo autoejecutable (.EXE).
+# 2 - Encapsular el proyecto para producir el archivo autoejecutable (EXE).
 
 En la consola es necesario ejecutar la siguiente línea: 
 
