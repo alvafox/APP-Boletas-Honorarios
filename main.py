@@ -613,7 +613,7 @@ class MyGUI(QMainWindow):
 
         # df.to_csv("BOLETAS.csv", sep=';', encoding='latin-1', index=False, decimal=',')
 
-        dpl =  df.groupby(["Boleta", "Rut Emisor", "Nº Boleta"], as_index = False)["Pdf"].count()
+        dpl =  df.groupby(["Boleta", "Rut Emisor", "Nº Boleta"], as_index = False)["PDF"].count()
 
         writer = pd.ExcelWriter('BOLETAS (PDF).xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Boletas de Honorarios', index=False)
