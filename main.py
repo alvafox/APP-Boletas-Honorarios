@@ -320,8 +320,7 @@ class MyGUI(QMainWindow):
         df["Detalle"] = ""
 
         for index, row in tqdm(df.iterrows(), total=len(df)):
-            print(str("número ") + str(int(index) + 1) + str(" de ") + str(len(df["PDF"])) + " | Boleta Nombre: " + str(
-                df.at[index, "PDF"]))
+            print(str("número ") + str(int(index) + 1) + str(" de ") + str(len(df["PDF"])) + " | Boleta Nombre: " + str(df.at[index, "PDF"]))
             target_folder = direccion / df.at[index, "PDF"]
             filename = target_folder
             pdfFile = open(filename, 'rb')  # open function reads the file
