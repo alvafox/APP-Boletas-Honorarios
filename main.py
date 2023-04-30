@@ -23,7 +23,7 @@ from decimal import Decimal as D
 context = decimal.getcontext()
 context.rounding = decimal.ROUND_HALF_UP
 
-#Para arreglar textos (experimental)
+#Para arreglar textos
 import ftfy
 from tqdm import tqdm
 
