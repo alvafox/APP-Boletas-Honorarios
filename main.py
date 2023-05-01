@@ -528,7 +528,7 @@ class MyGUI(QMainWindow):
                     print(f"Start: {start}, End: {end}")
                     print(HONORARIOS)
                     df.at[index, "Total Honorarios"] = HONORARIOS
-            else:  # Si no encuentra ningun 'Total Honorarios $:' entonces incorpora un "-" a honorarios y a impuesto retenido.
+            else:  # Si no encuentra ningun 'Total Honorarios $:' entonces incorpora un "-" a honorarios y a % impuesto retenido.
                 df.at[index, "% Impuesto Retenido"] = '-'
                 df.at[index, "Total Honorarios"] = '-'
                 print(df.at[index, "% Impuesto Retenido"])
