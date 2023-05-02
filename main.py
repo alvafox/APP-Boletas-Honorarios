@@ -337,7 +337,6 @@ class MyGUI(QMainWindow):
                 text += pageObj.extractText()
             text = ftfy.fix_text(text)
             print(text)
-            # Pdf NOMBRE
             ####################  NOMBRE  #########################
             if 'BOLETA ' in text:
                 #    start = text.index('$')
