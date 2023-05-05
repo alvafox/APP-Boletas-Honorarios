@@ -59,8 +59,8 @@ class MyGUI(QMainWindow):
         self.pushButton_3.clicked.connect(self.copy_and_rename)
         self.pushButton_4.clicked.connect(self.fusionar)
         self.pushButton_5.clicked.connect(self.merge_excel)
+        self.pushButton_6.clicked.connect(self.seleccionar)
         self.dateEdit_2.setDate(datetime.datetime.now().date())
-
 
     def show_line_mail(self):
         print(self.lineEdit.text())
@@ -655,8 +655,34 @@ class MyGUI(QMainWindow):
             print("OK!")
 
 
+    def seleccionar(self):
+        # Leer el archivo Excel con Pandas
+        df = pd.read_excel("BOLETAS (SELECCIONADAS).xlsx")
+        # Iterar sobre las filas del DataFrame
+        for index, row in tqdm(df.iterrows(), total=len(df)):
+            # Obtener el nombre del archivo PDF
+            nombre_archivo = row["PDF"]
+            # Obtener la ruta del archivo PDF
+            ruta_archivo = Path.cwd() / "Boletas (PDF)" / nombre_archivo
+            # Crear la subcarpeta (si no existe)
+            subcarpeta = "Boletas (SELECCIONADAS)"
+            if not os.path.exists(subcarpeta):
+                os.mkdir(subcarpeta)
+            # Mover el archivo PDF a la subcarpeta
+            if not os.path.exists(ruta_archivo):
+                print("Boleta no encontrada: ", nombre_archivo)
+                continue
+            shutil.move(str(ruta_archivo), Path.cwd() / subcarpeta / str(nombre_archivo))
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Traspaso de boletas")
+        dlg.setText("Traspaso de boletas terminado")
+        button = dlg.exec_()
+        if button == QMessageBox.Ok:
+            print("OK!")
+
+
     def copy_and_rename(self):
-        direccion = Path.cwd() / "Boletas (PDF)"
+        direccion = Path.cwd() / "Boletas (SELECCIONADAS)"
         direccion.mkdir(parents=True, exist_ok=True)
 
         def listarArchivos(direccion):
