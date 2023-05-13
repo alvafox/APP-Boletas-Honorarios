@@ -29,6 +29,7 @@ importlib-resources==5.12.0
 isodate==0.6.1
 looseversion==1.1.2
 lxml==4.9.2
+mupdf==1.21.1.20230112.1504
 networkx==3.1
 nibabel==5.1.0
 nipype==1.8.6
@@ -68,10 +69,10 @@ rdflib==6.3.2
 requests==2.28.2
 scipy==1.10.1
 simplejson==3.19.1
-tqdm==4.65.0
 six==1.16.0
+tqdm==4.65.0
 traits==6.3.2
-typing-extensions==4.5.0
+typing_extensions==4.5.0
 tzdata==2023.3
 urllib3==1.26.15
 wcwidth==0.2.6
