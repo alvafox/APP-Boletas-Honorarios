@@ -10,6 +10,7 @@ import pikepdf
 from pikepdf import Pdf
 import PyPDF2
 import xlsxwriter
+import mupdf
 from pathlib import Path
 import openpyxl
 
@@ -81,6 +82,11 @@ class MyGUI(QMainWindow):
         print(self.lineEdit_4.text())
         subject = str(self.lineEdit_4.text())
         return subject
+
+    def show_spin(self):
+        print(self.spinBox.text())
+        number = int(self.spinBox.text())
+        return number
 
     def date_start(self):
         print(self.dateEdit.text())
@@ -305,6 +311,7 @@ class MyGUI(QMainWindow):
         df = pd.DataFrame()
         df["N"] = [i + 1 for i in range(len(listaPDF))]
         df["PDF"] = pd.DataFrame(listaPDF)
+        df["TEXTO"] = ""
         df["Boleta"] = ""
         df["Rut Emisor"] = ""
         df["Nº Boleta"] = ""
@@ -336,6 +343,7 @@ class MyGUI(QMainWindow):
                 count = count + 1
                 text += pageObj.extractText()
             text = ftfy.fix_text(text)
+            df.at[index, 'TEXTO'] = text
             print(text)
             ####################  NOMBRE  #########################
             if 'BOLETA ' in text:
@@ -584,7 +592,8 @@ class MyGUI(QMainWindow):
                 print(DETALLE)
                 df.at[index, "Detalle"] = DETALLE
 
-        df = df.replace('\n', '', regex=True)
+        #df = df.replace('\n', '', regex=True)
+        df[df.columns[df.columns != 'TEXTO']] = df[df.columns[df.columns != 'TEXTO']].replace('\n', '', regex=True)
 
         df["Nombre ANID"] = df["Nombre ANID"].str.lstrip()
         df["RUT ANID"] = df["RUT ANID"].str.lstrip()
@@ -612,7 +621,7 @@ class MyGUI(QMainWindow):
 
         # df.to_csv("BOLETAS.csv", sep=';', encoding='latin-1', index=False, decimal=',')
 
-        dpl =  df.groupby(["Boleta", "Rut Emisor", "Nº Boleta"], as_index = False)["PDF"].count()
+        dpl = df.groupby(["Boleta", "Rut Emisor", "Nº Boleta"], as_index = False)["PDF"].count()
 
         writer = pd.ExcelWriter('BOLETAS (PDF).xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Boletas de Honorarios', index=False)
@@ -657,32 +666,51 @@ class MyGUI(QMainWindow):
 
     def seleccionar(self):
         # Leer el archivo Excel con Pandas
-        df = pd.read_excel("BOLETAS (SELECCIONADAS).xlsx")
-        # Iterar sobre las filas del DataFrame
-        for index, row in tqdm(df.iterrows(), total=len(df)):
-            # Obtener el nombre del archivo PDF
-            nombre_archivo = row["PDF"]
-            # Obtener la ruta del archivo PDF
-            ruta_archivo = Path.cwd() / "Boletas (PDF)" / nombre_archivo
-            # Crear la subcarpeta (si no existe)
-            subcarpeta = "Boletas (SELECCIONADAS)"
-            if not os.path.exists(subcarpeta):
-                os.mkdir(subcarpeta)
-            # Mover el archivo PDF a la subcarpeta
-            if not os.path.exists(ruta_archivo):
-                print("Boleta no encontrada: ", nombre_archivo)
-                continue
-            shutil.move(str(ruta_archivo), Path.cwd() / subcarpeta / str(nombre_archivo))
-        dlg = QMessageBox(self)
-        dlg.setWindowTitle("Traspaso de boletas")
-        dlg.setText("Traspaso de boletas terminado")
-        button = dlg.exec_()
-        if button == QMessageBox.Ok:
-            print("OK!")
+        if not os.path.exists("BOLETAS (SELECCION).xlsx"):
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Selección")
+            dlg.setText("Archivo 'BOLETAS (SELECCION).xlsx' no está en la carpeta")
+            button = dlg.exec_()
+            if button == QMessageBox.Ok:
+                print("OK!")
+        else:
+            df = pd.read_excel("BOLETAS (SELECCION).xlsx")
+            if "PDF" in df.columns: # La columna "PDF" existe en el DataFrame
+                # Iterar sobre las filas del DataFrame
+                no = 0
+                for index, row in tqdm(df.iterrows(), total=len(df)):
+                    # Obtener el nombre del archivo PDF
+                    nombre_archivo = row["PDF"]
+                    # Obtener la ruta del archivo PDF
+                    ruta_archivo = Path.cwd() / "Boletas (PDF)" / nombre_archivo
+                    # Crear la subcarpeta (si no existe)
+                    subcarpeta = "Boletas (SELECCION)"
+                    if not os.path.exists(subcarpeta):
+                        os.mkdir(subcarpeta)
+                    # Mover el archivo PDF a la subcarpeta
+                    if not os.path.exists(ruta_archivo):
+                        print("Boleta no encontrada: ", nombre_archivo)
+                        no += 1
+                        continue
+                    shutil.copy(str(ruta_archivo), Path.cwd() / subcarpeta / str(nombre_archivo))
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Traspaso de boletas")
+                dlg.setText(str(len(df) - no) + " boletas traspasadas de carpeta")
+                button = dlg.exec_()
+                if button == QMessageBox.Ok:
+                    print("OK!")
+            else:
+                # La columna "PDF" no existe en el DataFrame
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Traspaso de boletas")
+                dlg.setText("La columna 'PDF' no existe en el archivo 'BOLETAS (SELECCION).xlsx'.")
+                button = dlg.exec_()
+                if button == QMessageBox.Ok:
+                    print("OK!")
 
 
     def copy_and_rename(self):
-        direccion = Path.cwd() / "Boletas (SELECCIONADAS)"
+        direccion = Path.cwd() / "Boletas (SELECCION)"
         direccion.mkdir(parents=True, exist_ok=True)
 
         def listarArchivos(direccion):
@@ -699,7 +727,7 @@ class MyGUI(QMainWindow):
         j = 0
         while j < len(listaPDF):
             folder = direccion / listaPDF[j]
-            output_dir = Path.cwd() / "Boletas Enumeradas"
+            output_dir = Path.cwd() / "Boletas (ENUMERADAS)"
             output_dir.mkdir(parents=True, exist_ok=True)
             filename = folder
             filename_new = output_dir / "{:04n} - BHE.pdf".format(j + 1)
@@ -719,7 +747,8 @@ class MyGUI(QMainWindow):
     def fusionar(self):
         #https://stackoverflow.com/questions/3444645/merge-pdf-files
         #pip install PyMuPDF
-        direccion = Path.cwd() / "Boletas Enumeradas"
+        number = self.show_spin()
+        direccion = Path.cwd() / "Boletas (ENUMERADAS)"
         direccion.mkdir(parents=True, exist_ok=True)
 
         def listarArchivos(direccion):
@@ -733,37 +762,37 @@ class MyGUI(QMainWindow):
 
         listaPDF = listarArchivos(direccion)
 
-        pdfs = fitz.open()
+        pdfs = fitz.Document()
         z = 1
         j = 0
         while j < len(listaPDF):
             file = direccion / listaPDF[j]
-            mfile = fitz.open(file)
+            mfile = fitz.Document(file)
             output_dir = Path.cwd() / "Fusion PDFs"
             output_dir.mkdir(parents=True, exist_ok=True)
-            x = D(str((j + 1) / 50))
+            x = D(str((j + 1) / number))
             print(x)
-            pdfs.insertPDF(mfile)
-            if D(x) == D(z) and D(x) < D(str(math.ceil(len(listaPDF) / 50))):
+            pdfs.insert_pdf(mfile)
+            if D(x) == D(z) and D(x) < D(str(math.ceil(len(listaPDF) / number))):
                 nombre_archivo_salida = str(output_dir) + "/" + "TED ({}).pdf".format(z)
                 print(nombre_archivo_salida)
                 pdfs.save(nombre_archivo_salida)
-                pdfs = fitz.open()
+                pdfs = fitz.Document()
                 z += 1
                 print(z)
                 print(x)
-                print("Lote " + str(z) + " de " + str(math.ceil(len(listaPDF) / 50)))
-            elif D(x) == D(str((len(listaPDF) / 50))):
-                nombre_archivo_salida = output_dir / "TED ({}).pdf".format(math.ceil(len(listaPDF) / 50))
+                print("Lote " + str(z) + " de " + str(math.ceil(len(listaPDF) / number)))
+            elif D(x) == D(str((len(listaPDF) / number))):
+                nombre_archivo_salida = output_dir / "TED ({}).pdf".format(math.ceil(len(listaPDF) / number))
                 print(nombre_archivo_salida)
                 pdfs.save(nombre_archivo_salida)
-                print("Lote " + str(math.ceil(len(listaPDF) / 50)) + " de " + str(math.ceil(len(listaPDF) / 50)))
+                print("Lote " + str(math.ceil(len(listaPDF) / number)) + " de " + str(math.ceil(len(listaPDF) / number)))
                 print(z)
                 print(x)
             j += 1
         dlg = QMessageBox(self)
         dlg.setWindowTitle("Fusión de PDFs")
-        dlg.setText("Se han generado " + str(math.ceil(len(listaPDF) / 50)) + " fusiones de PDFs para la elaboración de TEDs")
+        dlg.setText("Se han generado " + str(math.ceil(len(listaPDF) / number)) + " fusiones de PDFs para la elaboración de TEDs")
         button = dlg.exec_()
         if button == QMessageBox.Ok:
             print("OK!")
