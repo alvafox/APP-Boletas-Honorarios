@@ -730,11 +730,11 @@ class MyGUI(QMainWindow):
             output_dir = Path.cwd() / "Boletas (ENUMERADAS)"
             output_dir.mkdir(parents=True, exist_ok=True)
             filename = folder
-            filename_new = output_dir / "{:04n} - BHE.pdf".format(j + 1)
+            filename_new = output_dir / "{:04n} - BOLETA SCH.pdf".format(j + 1)
             #pdf = Pdf.open(filename)
             #pdf.save(filename_new)
             shutil.copyfile(filename, filename_new)
-            print("Boleta " + listaPDF[j] + " renombrada como {:04n} - BOLETA.pdf".format(j+1))
+            print("Boleta " + listaPDF[j] + " renombrada como {:04n} - BOLETA SCH.pdf".format(j+1))
             j += 1
         dlg = QMessageBox(self)
         dlg.setWindowTitle("Enumeración de Archivos")
@@ -771,7 +771,6 @@ class MyGUI(QMainWindow):
             output_dir = Path.cwd() / "Fusion PDFs"
             output_dir.mkdir(parents=True, exist_ok=True)
             x = D(str((j + 1) / number))
-            print(x)
             pdfs.insert_pdf(mfile)
             if D(x) == D(z) and D(x) < D(str(math.ceil(len(listaPDF) / number))):
                 nombre_archivo_salida = str(output_dir) + "/" + "TED ({}).pdf".format(z)
@@ -779,16 +778,12 @@ class MyGUI(QMainWindow):
                 pdfs.save(nombre_archivo_salida)
                 pdfs = fitz.Document()
                 z += 1
-                print(z)
-                print(x)
                 print("Lote " + str(z) + " de " + str(math.ceil(len(listaPDF) / number)))
             elif D(x) == D(str((len(listaPDF) / number))):
                 nombre_archivo_salida = output_dir / "TED ({}).pdf".format(math.ceil(len(listaPDF) / number))
                 print(nombre_archivo_salida)
                 pdfs.save(nombre_archivo_salida)
                 print("Lote " + str(math.ceil(len(listaPDF) / number)) + " de " + str(math.ceil(len(listaPDF) / number)))
-                print(z)
-                print(x)
             j += 1
         dlg = QMessageBox(self)
         dlg.setWindowTitle("Fusión de PDFs")
@@ -811,3 +806,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
