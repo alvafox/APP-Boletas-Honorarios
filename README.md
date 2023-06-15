@@ -15,7 +15,7 @@ Ingresar la URL del proyecto y luego presionar el botón CLONE.
 
 # 1 - Instalar librerías del proyecto.
 
-Luego de clonar el repositorio, es necesario installar las librerias que permitiran usar las funciones del archivo main.py. Ejecutar la siguiente línea en la consola del entorno virtual del proyecto.
+Luego de clonar el repositorio, es necesario instalar las librerias que permitiran usar las funciones del archivo main.py. Ejecutar la siguiente línea en la consola del entorno virtual del proyecto.
 
 ```
 pip install -r requirements.txt
