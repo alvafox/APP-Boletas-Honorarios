@@ -433,7 +433,9 @@ class MyGUI(QMainWindow):
             if 'Total Honorarios $:' in text and ('10.75 % Impto.' or '11.50 % Impto.' or '11.5 % Impto.' or
                                                   '12.25 % Impto.' or '13 % Impto.' or '13.0 % Impto.' or '13.00 % Impto.' or '13.75 % Impto.' or
                                                   '14.5 % Impto.' or '14.50 % Impto.' or '15.25 % Impto.' or '16 % Impto.' or '16.0 % Impto.' or
-                                                  '16.00 % Impto.' or '16.75 % Impto.' or'17 % Impto.' or '17.0 % Impto.' or '17.00 % Impto.' in text):
+                                                  '16.00 % Impto.' or '16.75 % Impto.' or'17 % Impto.' or '17.0 % Impto.' or '17.00 % Impto.' or
+                                                  '17.75 % Impto.' or '18.25 % Impto.' or '19 % Impto.' or '19.0 % Impto.' or '19.00 % Impto.' or
+                                                  '20 % Impto.' or '20.0 % Impto.' or '20.00 % Impto.' in text):
                 start = text.index('Total Honorarios $:') + len("Total Honorarios $:")
                 if '10.75 % Impto.' in text:
                     end = text.index('10.75 % Impto.', start + 1)
@@ -525,6 +527,31 @@ class MyGUI(QMainWindow):
                     df.at[index, "% Impuesto Retenido"] = '17.00 %'
                     print(f"Start: {start}, End: {end}")
                     print('17.00 %')
+                elif '17.75 % Impto.' in text:
+                    end = text.index('17.75 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '17.75 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('17.75 %')
+                elif '18.25 % Impto.' in text:
+                    end = text.index('18.25 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '18.25 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('18.25 %')
+                elif '19 % Impto.' in text:
+                    end = text.index('19 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '19 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('19 %')
+                elif '19.0 % Impto.' in text:
+                    end = text.index('19.0 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '19.0 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('19.0 %')
+                elif '19.00 % Impto.' in text:
+                    end = text.index('19.00 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '19.00 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('19.00 %')
                 else:
                     end = text.index('Fecha / Hora', start + 1)
                     df.at[index, "% Impuesto Retenido"] = '-'
