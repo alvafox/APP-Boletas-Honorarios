@@ -433,7 +433,7 @@ class MyGUI(QMainWindow):
             if 'Total Honorarios $:' in text and ('10.75 % Impto.' or '11.50 % Impto.' or '11.5 % Impto.' or
                                                   '12.25 % Impto.' or '13 % Impto.' or '13.0 % Impto.' or '13.00 % Impto.' or '13.75 % Impto.' or
                                                   '14.5 % Impto.' or '14.50 % Impto.' or '15.25 % Impto.' or '16 % Impto.' or '16.0 % Impto.' or
-                                                  '16.00 % Impto.' or '17 % Impto.' or '17.0 % Impto.' or '17.00 % Impto.' in text):
+                                                  '16.00 % Impto.' or '16.75 % Impto.' or'17 % Impto.' or '17.0 % Impto.' or '17.00 % Impto.' in text):
                 start = text.index('Total Honorarios $:') + len("Total Honorarios $:")
                 if '10.75 % Impto.' in text:
                     end = text.index('10.75 % Impto.', start + 1)
@@ -505,6 +505,11 @@ class MyGUI(QMainWindow):
                     df.at[index, "% Impuesto Retenido"] = '16.00 %'
                     print(f"Start: {start}, End: {end}")
                     print('16.00 % Impto.')
+                elif '16.75 % Impto.' in text:
+                    end = text.index('16.75 % Impto.', start + 1)
+                    df.at[index, "% Impuesto Retenido"] = '16.75 %'
+                    print(f"Start: {start}, End: {end}")
+                    print('16.75 % Impto.')
                 elif '17 % Impto.' in text:
                     end = text.index('17 % Impto.', start + 1)
                     df.at[index, "% Impuesto Retenido"] = '17 %'
